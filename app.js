@@ -255,8 +255,9 @@ $('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap ag
 
 /* ===== Secret Shopper submit ===== */
 function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
-  $('submit').hidden=!shop||done;$('pdf1').textContent=shop?'Save PDF copy':'Submit';$('subcard').hidden=!shop;$('v_sheet').classList.toggle('locked',done);
+  $('submit').hidden=!shop||done;subArmed=false;$('pdf1').textContent=(shop||done)?'Save PDF copy':'Submit';$('subcard').hidden=!shop&&!done;$('v_sheet').classList.toggle('locked',done);
   $('del').hidden=done;$('reset').hidden=done;
+  if(!shop&&done)$('substate').innerHTML='<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> This sheet is final.';
   if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'}
 var subArmed=false;
 $('submit').onclick=function(){var b=this;
@@ -375,7 +376,12 @@ function sheetBody(doc,s,y){var e=EV(s.type),r=score(s),W=doc.internal.pageSize.
   return y}
 function pdfSheet(s){var doc=newDoc();if(!doc)return;var e=EV(s.type);var y=pdfHeader(doc,e.t+' Evaluation',fmtDate(s.date)+' - '+s.part);sheetBody(doc,s,y);pdfFooter(doc);
   deliver(doc.output('blob'),slug(e.short)+'_'+(e.person?slug(s.member)+'_':'')+(s.date||today())+'.pdf')}
-$('pdf1').onclick=function(){if(!answered(sh)){toast('Answer at least one item first.');return}pdfSheet(sh)};
+$('pdf1').onclick=function(){var b=this;if(!answered(sh)){toast('Answer at least one item first.');return}
+  if(sh.type==='shop'||sh.submitted){pdfSheet(sh);return}
+  var tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
+  if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+'Tap again to submit';setTimeout(function(){if(subArmed&&!sh.submitted){subArmed=false;b.textContent='Submit'}},4000);return}
+  subArmed=false;sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();
+  try{pdfSheet(sh)}catch(e){}toast('Submitted. This sheet is final.')};
 $('x_pdf').onclick=function(){var E=filtered();if(!E.length)return;var doc=newDoc();if(!doc)return;var t=mType(),e=EV(t),T=stats(t,E),H=doc.internal.pageSize.getHeight();
   var y=pdfHeader(doc,e.t+' Report',filterLabel());
   y=kv(doc,y,[['Overall compliance',pctTxt(T.Y,T.N),130],['Evaluations',String(E.length),100]].concat(e.person?[['Team members',String(T.members.length),110]]:[]).concat([['Compliant / non-compliant',T.Y+' / '+T.N,150]]));
