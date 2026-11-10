@@ -177,7 +177,7 @@ function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]
 function renderHome(){
   $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
   $('relock').hidden=!L.spw;
-  var M=mine().filter(function(s){return answered(s)||s.member||s.gen}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
+  var M=mine().filter(function(s){return !s.submitted&&(answered(s)||s.member||s.gen)}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
   $('recentcard').hidden=!M.length;
   $('recent').innerHTML=M.map(function(s){var r=score(s);return'<button data-open="'+esc(s.id)+'"><b>'+esc(EV(s.type).short)+'</b> · '+esc(who(s))+'<small>'+esc(fmtDate(s.date)+' · '+s.part+' · '+(r.pct==null?'not scored yet':r.pct+'%'))+'</small></button>'}).join('')}
 $('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(!b)return;var t=b.dataset.new;
