@@ -19,7 +19,7 @@ ipos:{t:'IPOS (Drive-thru)',short:'IPOS',d:'Order taker standards. One team memb
 ['Store','Order taker asks “May I have your name for the order, please?”',1,'Did not use that wording (note what was said, if anything)'],
 ['2.010.35','Order taker uses guest’s name in a sentence',1,'Did not use guest’s name','Tue'],
 ['2.010.5','Order taker says “My Pleasure” when thanked',1,'Other response or none','Tue'],
-['2.010.40','Order taker gives clear verbal direction',1,'No clear verbal direction','Tue'],
+['2.010.40','Order taker gives clear verbal direction on where to go and what happens next',1,'No clear verbal direction on where to go / what happens next','Tue'],
 ['2.010.21','Order taker offers a fond farewell',1,'No fond farewell','Tue']]}]},
 
 co:{t:'Carry Out & Facilities',short:'Carry Out & Facilities',d:'Front counter, dining room, restrooms and outside.',person:false,pre:'co',secs:[
