@@ -101,7 +101,7 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 <body>
 <main>
 <h1>TigerTown Evaluations</h1>
-<p class="sub">IPOS, Carry Out &amp; Facilities, and Back of House checks from Smart Shop. Works offline and syncs to the shared sheet.</p>
+<p class="sub">IPOS, Carry Out &amp; Facilities, Back of House and Secret Shopper checks from Smart Shop. Works offline and syncs to the shared sheet.</p>
 <p class="status" id="status"></p>
 
 <div class="tabs" role="tablist">
@@ -114,6 +114,12 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 <div class="card">
   <h3>Start a new evaluation</h3>
   <div class="big" id="pickers"></div>
+  <button class="back" id="relock" hidden style="margin-top:8px">🔒 Lock Secret Shopper on this device</button>
+</div>
+<div class="card" id="lockcard" hidden>
+  <h3>Secret Shopper password</h3>
+  <div class="row"><label class="wide">Password<input id="pw_in" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label><button class="primary" id="pw_go">Unlock</button><button id="pw_cancel">Cancel</button></div>
+  <p class="small" id="pw_err" style="color:var(--bad)"></p>
 </div>
 <div class="card" id="recentcard">
   <h3>Continue a sheet on this device</h3>
@@ -127,9 +133,9 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 <div class="evtitle" id="evtitle"></div>
 <div class="card">
   <div class="row" id="memberrow">
-    <label class="wide">Team member being evaluated<input id="f_member" placeholder="Team member’s name" autocomplete="off" list="memberlist"></label>
+    <label class="wide" id="memberlbl">Team member being evaluated<input id="f_member" placeholder="Team member’s name" autocomplete="off" list="memberlist"></label>
   </div>
-  <div class="row" style="margin-top:10px">
+  <div class="row" style="margin-top:10px" id="byrow">
     <label class="wide">Evaluator name<input id="f_by" placeholder="Your name" autocomplete="off" list="evallist"></label>
   </div>
   <div class="row" style="margin-top:10px">
