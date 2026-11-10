@@ -124,7 +124,7 @@ boh:{t:'Back of House',short:'Back of House',d:'Food quality and packaging check
 ['1.02.5','Nuggets meet color requirements',1,'Color off'],
 ['1.02.4','Nuggets free of bare spots larger than a dime',1,'Bare spots too large']]}]}
 };
-EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Password required. Same IPOS standards. No name needed.',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs};
+EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Thank you for helping make our team better!',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs};
 var ORDER=['ipos','co','boh','shop'];
 var SS_LEGEND='= non-compliant on an October Smart Shop (Tue = Tuesday dinner, Fri = Friday afternoon).';
 var APP='TigerTown Evaluations';
@@ -148,7 +148,7 @@ function norm(id,d){d=obj(d);var a={},n={},A=obj(d.a),N=obj(d.n);
   Object.keys(A).forEach(function(k){if(A[k]==='y'||A[k]==='n'||A[k]==='na')a[k]=A[k]});
   Object.keys(N).forEach(function(k){var v=str(N[k],2000);if(v)n[k]=v});
   var type=EVALS[d.type]?d.type:'ipos';
-  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),a:a,n:n,created:+d.created||0,updated:+d.updated||0}}
+  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
 function score(s){var r={Y:0,N:0,sec:{}};EV(s.type).secs.forEach(function(sec){var y=0,n=0;sec.items.forEach(function(it){if(!it[2])return;var v=s.a[iid(s.type,it)];if(v==='y')y++;else if(v==='n')n++});r.sec[sec.k]={y:y,n:n};r.Y+=y;r.N+=n});r.pct=r.Y+r.N?Math.round(r.Y/(r.Y+r.N)*100):null;return r}
 function answered(s){return Object.keys(s.a).length>0}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
@@ -156,8 +156,8 @@ function slug(s){return String(s||'').trim().replace(/[^A-Za-z0-9]+/g,'-').repla
 function who(s){var e=EV(s.type);if(e.anon)return 'Secret shopper'+(s.member?' · '+s.member:'');return e.person?(s.member||'No name yet'):(s.by?'by '+s.by:'No evaluator yet')}
 
 /* ===== Storage (this device) ===== */
-var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',sid:'',spw:'',lastSync:0},storeOk=true;
-function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.spw=str(p.spw,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
+var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',sid:'',spw:'',mpw:'',lastSync:0},storeOk=true;
+function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.spw=str(p.spw,200);L.mpw=str(p.mpw,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
 function lsave(){try{localStorage.setItem(KEY,JSON.stringify(L));if(!storeOk){storeOk=true;setStatus()}}catch(e){storeOk=false;setStatus()}}
 function setStatus(){var el=$('status'),n=Object.keys(L.sheets).filter(function(k){return answered(L.sheets[k])}).length;
   if(!storeOk){el.className='status warn';el.innerHTML='<b>Not saving</b> · this browser is blocking storage. Open the app from the Home Screen icon.';return}
@@ -175,7 +175,7 @@ var sh=null,view='home';
 function all(){return Object.keys(L.sheets).map(function(k){return L.sheets[k]})}
 function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]&&L.sheets[k]}).map(function(k){return L.sheets[k]})}
 function renderHome(){
-  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.locked&&L.spw?'Unlocked on this device. Same IPOS standards. No name needed.':e.d)+'</span></button>'}).join('');
+  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
   $('relock').hidden=!L.spw;
   var M=mine().filter(function(s){return answered(s)||s.member||s.gen}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
   $('recentcard').hidden=!M.length;
@@ -203,7 +203,7 @@ function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updat
 function lists(){var m={},e={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1;if(s.by)e[s.by.trim()]=1});
   $('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');
   $('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
-function renderFields(){var e=EV(sh.type);$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, optional)':'Team member being evaluated';
+function renderFields(){var e=EV(sh.type);renderSubmit();$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, optional)':'Team member being evaluated';
   $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('out').hidden=true;needName();lists()}
 function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!e.anon&&!sh.member.trim());$('f_by').classList.toggle('need',!e.anon&&!sh.by.trim());
   if(e.anon){$('barwho').textContent='Secret shopper · '+(sh.member.trim()?sh.member+' · ':'')+sh.part;return}
@@ -221,7 +221,7 @@ function scores(){var r=score(sh),tot=0,ans=0;
   EV(sh.type).secs.forEach(function(sec){var c=r.sec[sec.k];$('sc_'+sec.k).textContent=c.y+' compliant · '+c.n+' non-compliant';sec.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
   $('pct').textContent=r.pct==null?'–':r.pct+'%';
   $('chips').innerHTML='<span><b>'+r.Y+'</b> compliant</span><span><b>'+r.N+'</b> non-compliant</span><span><b>'+ans+'</b> of '+tot+' scored answered</span>'}
-function touch(){sh.updated=Date.now();L.dirty[sh.id]=1;lsave();setStatus();queueSync()}
+function touch(){if(sh.submitted){toast('This sheet was submitted and can’t be changed.');return}sh.updated=Date.now();L.dirty[sh.id]=1;lsave();setStatus();queueSync()}
 function pick(id){if(!L.sheets[id])return;if(L.sheets[id].type==='shop'&&!L.spw){toast('Secret Shopper sheets need the password.');return false}L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderFields();renderItems()}
 function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[s.id]=s;L.mine[s.id]=1;lsave();pick(s.id);go('sheet');(EV(type).person?$('f_member'):$('f_by')).focus();return s}
 function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
@@ -231,11 +231,11 @@ function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?
 
 var armed=false,dtm;
 function rst(){armed=false;clearTimeout(dtm);$('del').classList.remove('armed');$('del').textContent='Delete sheet'}
-$('del').onclick=function(){if(!armed){armed=true;this.classList.add('armed');this.textContent='Tap again to delete';dtm=setTimeout(rst,3000);return}
+$('del').onclick=function(){if(sh&&sh.submitted){toast('Submitted sheets can’t be deleted here.');return}if(!armed){armed=true;this.classList.add('armed');this.textContent='Tap again to delete';dtm=setTimeout(rst,3000);return}
   rst();var did=sh.id;delete L.sheets[did];delete L.mine[did];delete L.dirty[did];if(syncOn())L.dels[did]=1;L.cur=null;sh=null;lsave();queueSync();setStatus();go('home');toast('Sheet deleted.')};
 [['f_member','member'],['f_by','by'],['f_date','date'],['f_part','part'],['f_gen','gen']].forEach(function(p){
   $(p[0]).addEventListener(p[0]==='f_part'?'change':'input',function(){sh[p[1]]=this.value;touch();if(p[1]!=='gen')needName()})});
-$('sections').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(!b)return;
+$('sections').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(!b||sh.submitted)return;
   var row=b.closest('.item'),id=row.dataset.id,v=b.dataset.v;if(sh.a[id]===v)v='';
   if(v)sh.a[id]=v;else delete sh.a[id];touch();
   row.className='item '+v;row.querySelectorAll('.opts button').forEach(function(x){x.classList.toggle('on',x.dataset.v===v)});
@@ -246,6 +246,35 @@ $('sum').onclick=function(){var o=$('out'),t=summary(sh),b=this;o.value=t;o.hidd
 var clr=false;
 $('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap again to clear';setTimeout(function(){clr=false;b.textContent='Clear answers'},3000);return}
   clr=false;b.textContent='Clear answers';sh.a={};sh.n={};touch();renderItems()};
+
+/* ===== Secret Shopper submit ===== */
+function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
+  $('submit').hidden=!shop||done;$('subcard').hidden=!shop;$('v_sheet').classList.toggle('locked',done);
+  $('del').hidden=done;$('reset').hidden=done;
+  if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'}
+var subArmed=false;
+$('submit').onclick=function(){var b=this;
+  if(!answered(sh)){toast('Answer the items first.');return}
+  if(!syncOn()||!L.spw){toast('Connect and unlock Secret Shopper first.');return}
+  var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
+  if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+'Tap again to submit';setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
+  subArmed=false;b.textContent='Submit to store';
+  sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();toast('Submitted. Sending to the store…')};
+function shopMail(s){var e=EV(s.type),out={subject:'Secret Shopper - '+fmtDate(s.date)+' '+s.part+(s.member?' - '+s.member:'')+' - '+(score(s).pct==null?'':score(s).pct+'%'),text:summary(s)};
+  try{var doc=newDoc();if(doc){var y=pdfHeader(doc,e.t+' Evaluation',fmtDate(s.date)+' - '+s.part);sheetBody(doc,s,y);pdfFooter(doc);out.pdf=doc.output('datauristring').split(',')[1];out.pdfName='Secret-Shopper_'+(s.date||today())+'.pdf'}}catch(err){}
+  return out}
+
+/* ===== Manager lock ===== */
+function mgrLock(silent){L.mpw='';Object.keys(L.sheets).forEach(function(k){if(!L.mine[k]){delete L.sheets[k];delete L.dirty[k]}});lsave();if(view==='manager')go('manager');if(!silent)toast('Manager view is locked on this device.')}
+$('mgr_lock').onclick=function(){mgrLock(false)};
+$('mp_go').onclick=function(){var pw=$('mp_in').value;if(!pw)return;
+  if(!syncOn()){$('mp_err').textContent='This device isn’t connected. Open the pinned GroupMe link first.';return}
+  var b=this;b.disabled=true;$('mp_err').textContent='Checking…';
+  fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=mpw&k='+encodeURIComponent(L.key)+'&mp='+encodeURIComponent(pw)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()}).then(function(r){b.disabled=false;
+    if(r&&r.ok&&r.mgr){L.mpw=pw;lsave();$('mp_in').value='';$('mp_err').textContent='';go('manager')}
+    else $('mp_err').textContent=(r&&r.error==='bad_key')?'Wrong access key. Open the pinned GroupMe link again.':'Wrong password.'},
+  function(){b.disabled=false;$('mp_err').textContent='Couldn’t reach the server. Try again.'})};
+$('mp_in').addEventListener('keydown',function(e){if(e.key==='Enter')$('mp_go').click()});
 
 /* ===== Manager view ===== */
 var open={};
@@ -264,7 +293,7 @@ function stats(type,E){var e=EV(type),Y=0,N=0,sec={};e.secs.forEach(function(x){
   var st=[];allItems(type).forEach(function(x){var y=0,n=0;E.forEach(function(s){if(s.a[x.id]==='y')y++;else if(s.a[x.id]==='n')n++});if(n)st.push({it:x.it,sec:x.sec.t,n:n,d:y+n})});
   st.sort(function(a,b){return b.n/b.d-a.n/a.d||b.n-a.n});
   return{Y:Y,N:N,sec:sec,members:members,missed:st}}
-function renderMgr(){if($('v_mgr').hidden)return;
+function renderMgr(){if($('v_mgr').hidden||!L.mpw)return;
   var t=mType(),e=EV(t),P=pool();
   $('m_memberlbl').hidden=!e.person;$('bymembercard').hidden=!e.person;
   opts($('m_by'),uniq(P.map(function(s){return s.by.trim()})),'All evaluators');
@@ -385,12 +414,12 @@ function readSid(v){var m=String(v||'').match(/[?&#]s=([A-Za-z0-9_-]{20,})/)||St
 function takeKeyFromUrl(){var k=readKey(location.search)||readKey(location.hash),d=readSid(location.search)||readSid(location.hash);if(d&&d!==L.sid){L.sid=d;syncErr='';lsave()}if(k&&k!==L.key){L.key=k;syncErr='';lsave()}}
 function queueSync(){if(!syncOn())return;clearTimeout(stimer);stimer=setTimeout(push,1200)}
 function api(method,body){
-  if(method==='GET')return fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(L.key)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()});
+  if(method==='GET')return fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(L.key)+(L.mpw?'&mp='+encodeURIComponent(L.mpw):'')+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()});
   body.k=L.key;return fetch(SYNC_URL,{method:'POST',body:JSON.stringify(body),redirect:'follow'}).then(function(r){return r.json()})}
 var TABS={ipos:'IPOS',co:'Carry Out & Facilities',boh:'Back of House',shop:'Secret Shopper'};
 function keep(s){return s&&(answered(s)||s.member||s.gen)}
 function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=Object.keys(L.dels);if(!ids.length&&!dels.length)return;
-  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k];return{id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)}});
+  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k],o={id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)};if(s.type==='shop'&&s.submitted)o.mail=shopMail(s);return o});
   ids.forEach(function(k){if(!keep(L.sheets[k]))delete L.dirty[k]});
   if(!put.length&&!dels.length){lsave();setStatus();return}
   var sent={};put.forEach(function(x){sent[x.id]=x.updated});
@@ -399,7 +428,8 @@ function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=O
   api('POST',{put:put,del:dels,heads:heads,head:rowHead('ipos'),spw:L.spw||''}).then(function(r){syncing=false;
     if(!r||!r.ok){syncErr=r&&r.error||'error';setStatus();if(syncErr!=='bad_key')setTimeout(push,30000);return}
     syncErr='';(r.saved||[]).forEach(function(k){if(L.sheets[k]&&L.sheets[k].updated===sent[k])delete L.dirty[k]});(r.deleted||[]).forEach(function(k){delete L.dels[k]});
-    if(r.rejected&&r.rejected.length){r.rejected.forEach(function(k){delete L.dirty[k];delete L.dels[k]});if(L.spw&&r.rejected.length){L.spw='';renderHome()}toast('Secret Shopper changes need the password. They were not saved.');setTimeout(pull,500)}
+    if(r.mailed&&r.mailed.length)toast('Sent to the store.');
+    if(r.rejected&&r.rejected.length){r.rejected.forEach(function(k){delete L.dirty[k];delete L.dels[k]});var sub=r.rejected.some(function(k){return L.sheets[k]&&L.sheets[k].submitted});if(!sub&&L.spw){L.spw='';renderHome()}toast(sub?'That sheet was already submitted, so it can’t be changed.':'Secret Shopper changes need the password. They were not saved.');setTimeout(pull,500)}
     lsave();setStatus();if(Object.keys(L.dirty).length)queueSync()},
   function(){syncing=false;syncErr='offline';setStatus();setTimeout(push,30000)})}
 var pulling=false;
@@ -407,6 +437,7 @@ function pull(){if(!syncOn()||pulling)return;pulling=true;
   api('GET').then(function(r){pulling=false;
     if(!r||!r.ok){syncErr=r&&r.error||'error';setStatus();return}
     syncErr=Object.keys(L.dirty).length?syncErr:'';
+    if(L.mpw&&r.mgr===false){mgrLock(true)}
     var gone={};(r.deleted||[]).forEach(function(k){gone[k]=1});
     Object.keys(gone).forEach(function(k){if(L.sheets[k]&&k!==L.cur){delete L.sheets[k];delete L.mine[k];delete L.dirty[k]}});
     var curChanged=false;
@@ -428,7 +459,7 @@ function go(v){view=v;var m=v==='manager';
   $('t_eval').classList.toggle('on',!m);$('t_mgr').classList.toggle('on',m);
   if(v==='home')renderHome();
   if(v==='sheet'&&!sh){go('home');return}
-  if(m){pull();$('keycard').hidden=syncOn();renderMgr()}
+  if(m){var open_=!!L.mpw;$('mgrlock').hidden=open_;$('mgrbody').hidden=!open_;if(!open_){$('mp_err').textContent='';setTimeout(function(){$('mp_in').focus()},50)}else{pull();$('keycard').hidden=syncOn();renderMgr()}}
   window.scrollTo(0,0)}
 $('t_eval').onclick=function(){location.hash='evaluate';go('home')};
 $('t_mgr').onclick=function(){location.hash='manager';go('manager')};
