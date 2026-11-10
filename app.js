@@ -175,7 +175,7 @@ var sh=null,view='home';
 function all(){return Object.keys(L.sheets).map(function(k){return L.sheets[k]})}
 function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]&&L.sheets[k]}).map(function(k){return L.sheets[k]})}
 function renderHome(){
-  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
+  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
   $('relock').hidden=!L.spw;
   var M=mine().filter(function(s){return !s.submitted&&(answered(s)||s.member||s.gen)}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
   $('recentcard').hidden=!M.length;
