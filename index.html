@@ -95,6 +95,7 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 .recent button{width:100%;text-align:left;margin-bottom:8px;padding:10px 14px;min-height:56px}
 .recent button small{display:block;color:var(--muted);font-size:13px}
 .back{background:transparent;border:0;color:var(--accent);font-weight:600;padding:0 4px;min-height:40px}
+.locked .opts button,.locked textarea,.locked input,.locked select{pointer-events:none;opacity:.7}
 .evtitle{font-size:20px;font-weight:700;margin:2px 4px 10px}
 </style>
 </head>
@@ -153,11 +154,15 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
   </div>
 </div>
 
+<div class="card" id="subcard" hidden>
+  <div id="substate"></div>
+</div>
 <div id="sections"></div>
 
 <div class="card">
   <label>Overall comments<textarea id="f_gen" placeholder="Anything else to coach on…"></textarea></label>
   <div class="actions" style="margin-top:12px">
+    <button class="primary" id="submit" hidden>Submit to store</button>
     <button class="primary" id="pdf1">Export PDF</button>
     <button id="sum">Copy summary</button>
     <button id="reset">Clear answers</button>
@@ -169,6 +174,13 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 
 <!-- MANAGER -->
 <section id="v_mgr" hidden>
+<div class="card" id="mgrlock" hidden>
+  <h3>Manager password</h3>
+  <div class="row"><label class="wide">Password<input id="mp_in" type="password" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false"></label><button class="primary" id="mp_go">Unlock</button></div>
+  <p class="small">Hint: Store #</p>
+  <p class="small" id="mp_err" style="color:var(--bad)"></p>
+</div>
+<div id="mgrbody">
 <div class="card" id="keycard" hidden>
   <h3>Connect to the shared sheet</h3>
   <p class="small" style="margin:0 0 10px">This device isn’t connected, so it only shows its own evaluations. Open the pinned GroupMe link, or paste it here.</p>
@@ -209,6 +221,8 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
     <input type="file" id="b_file" accept=".json,application/json" hidden>
   </div>
   <p class="small">When connected, all evaluations are kept in your Google Sheet. A backup file is an extra copy you can keep in Files or iCloud Drive. Restoring adds sheets from the file and keeps the ones already here.</p>
+  <button class="back" id="mgr_lock" style="margin-top:6px">🔒 Lock Manager view on this device</button>
+</div>
 </div>
 </section>
 </main>
