@@ -124,7 +124,8 @@ boh:{t:'Back of House',short:'Back of House',d:'Food quality and packaging check
 ['1.02.5','Nuggets meet color requirements',1,'Color off'],
 ['1.02.4','Nuggets free of bare spots larger than a dime',1,'Bare spots too large']]}]}
 };
-var ORDER=['ipos','co','boh'];
+EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Password required. Same IPOS standards. No name needed.',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs};
+var ORDER=['ipos','co','boh','shop'];
 var SS_LEGEND='= non-compliant on an October Smart Shop (Tue = Tuesday dinner, Fri = Friday afternoon).';
 var APP='TigerTown Evaluations';
 function EV(t){return EVALS[t]||EVALS.ipos}
@@ -152,11 +153,11 @@ function score(s){var r={Y:0,N:0,sec:{}};EV(s.type).secs.forEach(function(sec){v
 function answered(s){return Object.keys(s.a).length>0}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
 function slug(s){return String(s||'').trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'sheet'}
-function who(s){return EV(s.type).person?(s.member||'No name yet'):(s.by?'by '+s.by:'No evaluator yet')}
+function who(s){var e=EV(s.type);if(e.anon)return 'Secret shopper'+(s.member?' · '+s.member:'');return e.person?(s.member||'No name yet'):(s.by?'by '+s.by:'No evaluator yet')}
 
 /* ===== Storage (this device) ===== */
-var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',sid:'',lastSync:0},storeOk=true;
-function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
+var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',sid:'',spw:'',lastSync:0},storeOk=true;
+function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.spw=str(p.spw,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
 function lsave(){try{localStorage.setItem(KEY,JSON.stringify(L));if(!storeOk){storeOk=true;setStatus()}}catch(e){storeOk=false;setStatus()}}
 function setStatus(){var el=$('status'),n=Object.keys(L.sheets).filter(function(k){return answered(L.sheets[k])}).length;
   if(!storeOk){el.className='status warn';el.innerHTML='<b>Not saving</b> · this browser is blocking storage. Open the app from the Home Screen icon.';return}
@@ -174,22 +175,38 @@ var sh=null,view='home';
 function all(){return Object.keys(L.sheets).map(function(k){return L.sheets[k]})}
 function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]&&L.sheets[k]}).map(function(k){return L.sheets[k]})}
 function renderHome(){
-  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
+  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button class="'+(i===0?'primary':'')+'" data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.locked&&L.spw?'Unlocked on this device. Same IPOS standards. No name needed.':e.d)+'</span></button>'}).join('');
+  $('relock').hidden=!L.spw;
   var M=mine().filter(function(s){return answered(s)||s.member||s.gen}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
   $('recentcard').hidden=!M.length;
   $('recent').innerHTML=M.map(function(s){var r=score(s);return'<button data-open="'+esc(s.id)+'"><b>'+esc(EV(s.type).short)+'</b> · '+esc(who(s))+'<small>'+esc(fmtDate(s.date)+' · '+s.part+' · '+(r.pct==null?'not scored yet':r.pct+'%'))+'</small></button>'}).join('')}
-$('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(b)add(b.dataset.new)});
-$('recent').addEventListener('click',function(e){var b=e.target.closest('button[data-open]');if(b){pick(b.dataset.open);go('sheet')}});
+$('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(!b)return;var t=b.dataset.new;
+  if(EV(t).locked&&!L.spw){$('lockcard').hidden=false;$('pw_err').textContent='';$('pw_in').value='';$('pw_in').focus();$('lockcard').scrollIntoView({block:'center'});return}
+  add(t)});
+$('pw_go').onclick=function(){var pw=$('pw_in').value;if(!pw)return;
+  if(!syncOn()){$('pw_err').textContent='This device isn’t connected. Open the pinned GroupMe link first.';return}
+  if(navigator.onLine===false){$('pw_err').textContent='You need to be online to unlock.';return}
+  var b=this;b.disabled=true;$('pw_err').textContent='Checking…';
+  fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=spw&k='+encodeURIComponent(L.key)+'&pw='+encodeURIComponent(pw)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()}).then(function(r){b.disabled=false;
+    if(r&&r.ok&&r.shop){L.spw=pw;lsave();$('lockcard').hidden=true;$('pw_in').value='';add('shop')}
+    else $('pw_err').textContent=(r&&r.error==='bad_key')?'Wrong access key. Open the pinned GroupMe link again.':'Wrong password.'},
+  function(){b.disabled=false;$('pw_err').textContent='Couldn’t reach the server. Try again.'})};
+$('pw_in').addEventListener('keydown',function(e){if(e.key==='Enter')$('pw_go').click()});
+$('pw_cancel').onclick=function(){$('lockcard').hidden=true};
+$('relock').onclick=function(){if(Object.keys(L.dirty).some(function(k){return L.sheets[k]&&L.sheets[k].type==='shop'})){toast('Wait until your Secret Shopper sheet has synced, then lock.');return}
+  L.spw='';lsave();renderHome();toast('Secret Shopper is locked on this device.')};
+$('recent').addEventListener('click',function(e){var b=e.target.closest('button[data-open]');if(b&&pick(b.dataset.open)!==false)go('sheet')});
 $('back').onclick=function(){go('home')};
 
 /* ===== Sheet view ===== */
-function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:last.by||'',rest:last.rest||'',date:today(),part:partNow(),gen:'',a:{},n:{},created:t,updated:t}}
+function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:EV(type).anon?'Secret shopper':(last.by||''),rest:last.rest||'',date:today(),part:partNow(),gen:'',a:{},n:{},created:t,updated:t}}
 function lists(){var m={},e={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1;if(s.by)e[s.by.trim()]=1});
   $('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');
   $('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
-function renderFields(){var e=EV(sh.type);$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;
+function renderFields(){var e=EV(sh.type);$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, optional)':'Team member being evaluated';
   $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('out').hidden=true;needName();lists()}
-function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!sh.member.trim());$('f_by').classList.toggle('need',!sh.by.trim());
+function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!e.anon&&!sh.member.trim());$('f_by').classList.toggle('need',!e.anon&&!sh.by.trim());
+  if(e.anon){$('barwho').textContent='Secret shopper · '+(sh.member.trim()?sh.member+' · ':'')+sh.part;return}
   $('barwho').textContent=e.person?(sh.member.trim()?sh.member+' · '+sh.part:'Enter the team member’s name'):(sh.by.trim()?e.short+' · '+sh.part:'Enter your name')}
 function renderItems(){var h='',T=sh.type;
   EV(T).secs.forEach(function(sec,si){h+='<h2>'+esc(sec.t)+'<small id="sc_'+sec.k+'"></small></h2>';
@@ -205,9 +222,9 @@ function scores(){var r=score(sh),tot=0,ans=0;
   $('pct').textContent=r.pct==null?'–':r.pct+'%';
   $('chips').innerHTML='<span><b>'+r.Y+'</b> compliant</span><span><b>'+r.N+'</b> non-compliant</span><span><b>'+ans+'</b> of '+tot+' scored answered</span>'}
 function touch(){sh.updated=Date.now();L.dirty[sh.id]=1;lsave();setStatus();queueSync()}
-function pick(id){if(!L.sheets[id])return;L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderFields();renderItems()}
-function add(type){var s=blank(type);L.sheets[s.id]=s;L.mine[s.id]=1;lsave();pick(s.id);go('sheet');(EV(type).person?$('f_member'):$('f_by')).focus()}
-function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+'Evaluator: '+(s.by||'—')+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
+function pick(id){if(!L.sheets[id])return;if(L.sheets[id].type==='shop'&&!L.spw){toast('Secret Shopper sheets need the password.');return false}L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderFields();renderItems()}
+function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[s.id]=s;L.mine[s.id]=1;lsave();pick(s.id);go('sheet');(EV(type).person?$('f_member'):$('f_by')).focus();return s}
+function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
   e.secs.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
     sec.items.forEach(function(it){var id=iid(s.type,it);if(s.a[id]==='n')t+='  ✗ '+it[0]+' '+it[1]+(it[2]?'':' (unscored)')+' – '+it[3]+(s.n[id]?' | Note: '+s.n[id]:'')+'\n'})});
   t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
@@ -271,7 +288,7 @@ function renderMgr(){if($('v_mgr').hidden)return;
       h+='<tr class="det"><td colspan="'+cols+'">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
   $('evtable').innerHTML=h+'</tbody></table>'}
 $('evtable').addEventListener('click',function(e){
-  var o=e.target.closest('button[data-open]');if(o){pick(o.dataset.open);location.hash='evaluate';go('sheet');return}
+  var o=e.target.closest('button[data-open]');if(o){if(pick(o.dataset.open)===false)return;location.hash='evaluate';go('sheet');return}
   var p=e.target.closest('button[data-pdf]');if(p){pdfSheet(L.sheets[p.dataset.pdf]);return}
   var tr=e.target.closest('tr.ev');if(!tr)return;var id=tr.dataset.id;open[id]=!open[id];renderMgr()});
 ['m_type','m_by','m_part','m_member','m_from','m_to'].forEach(function(i){$(i).onchange=renderMgr});
@@ -370,7 +387,7 @@ function queueSync(){if(!syncOn())return;clearTimeout(stimer);stimer=setTimeout(
 function api(method,body){
   if(method==='GET')return fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(L.key)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()});
   body.k=L.key;return fetch(SYNC_URL,{method:'POST',body:JSON.stringify(body),redirect:'follow'}).then(function(r){return r.json()})}
-var TABS={ipos:'IPOS',co:'Carry Out & Facilities',boh:'Back of House'};
+var TABS={ipos:'IPOS',co:'Carry Out & Facilities',boh:'Back of House',shop:'Secret Shopper'};
 function keep(s){return s&&(answered(s)||s.member||s.gen)}
 function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=Object.keys(L.dels);if(!ids.length&&!dels.length)return;
   var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k];return{id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)}});
@@ -379,9 +396,10 @@ function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=O
   var sent={};put.forEach(function(x){sent[x.id]=x.updated});
   var heads={};ORDER.forEach(function(t){heads[TABS[t]]=rowHead(t)});
   syncing=true;setStatus();
-  api('POST',{put:put,del:dels,heads:heads,head:rowHead('ipos')}).then(function(r){syncing=false;
+  api('POST',{put:put,del:dels,heads:heads,head:rowHead('ipos'),spw:L.spw||''}).then(function(r){syncing=false;
     if(!r||!r.ok){syncErr=r&&r.error||'error';setStatus();if(syncErr!=='bad_key')setTimeout(push,30000);return}
     syncErr='';(r.saved||[]).forEach(function(k){if(L.sheets[k]&&L.sheets[k].updated===sent[k])delete L.dirty[k]});(r.deleted||[]).forEach(function(k){delete L.dels[k]});
+    if(r.rejected&&r.rejected.length){r.rejected.forEach(function(k){delete L.dirty[k];delete L.dels[k]});if(L.spw&&r.rejected.length){L.spw='';renderHome()}toast('Secret Shopper changes need the password. They were not saved.');setTimeout(pull,500)}
     lsave();setStatus();if(Object.keys(L.dirty).length)queueSync()},
   function(){syncing=false;syncErr='offline';setStatus();setTimeout(push,30000)})}
 var pulling=false;
