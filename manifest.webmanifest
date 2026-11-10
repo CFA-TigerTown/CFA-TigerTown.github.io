@@ -1,7 +1,7 @@
 {
-  "name": "IPOS Evaluation",
-  "short_name": "IPOS Eval",
-  "description": "Drive-thru IPOS evaluation sheet",
+  "name": "TigerTown Evaluations",
+  "short_name": "TT Evals",
+  "description": "IPOS, Carry Out & Facilities, and Back of House evaluations",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef1f4",
