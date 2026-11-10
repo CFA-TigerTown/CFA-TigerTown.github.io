@@ -124,7 +124,7 @@ boh:{t:'Back of House',short:'Back of House',d:'Food quality and packaging check
 ['1.02.5','Nuggets meet color requirements',1,'Color off'],
 ['1.02.4','Nuggets free of bare spots larger than a dime',1,'Bare spots too large']]}]}
 };
-EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Thank you for helping make our team better!',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs};
+EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Thank you for helping make our team better!',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs.map(function(sec){return{k:sec.k,t:sec.t,items:sec.items.map(function(it){return it.slice(0,4)})}})}; /* no Smart Shop miss tags for shoppers */
 var ORDER=['ipos','co','boh','shop'];
 var SS_LEGEND='= non-compliant on an October Smart Shop (Tue = Tuesday dinner, Fri = Friday afternoon).';
 var APP='TigerTown Evaluations';
@@ -148,7 +148,7 @@ function norm(id,d){d=obj(d);var a={},n={},A=obj(d.a),N=obj(d.n);
   Object.keys(A).forEach(function(k){if(A[k]==='y'||A[k]==='n'||A[k]==='na')a[k]=A[k]});
   Object.keys(N).forEach(function(k){var v=str(N[k],2000);if(v)n[k]=v});
   var type=EVALS[d.type]?d.type:'ipos';
-  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
+  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),txn:str(d.txn,60),a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
 function score(s){var r={Y:0,N:0,sec:{}};EV(s.type).secs.forEach(function(sec){var y=0,n=0;sec.items.forEach(function(it){if(!it[2])return;var v=s.a[iid(s.type,it)];if(v==='y')y++;else if(v==='n')n++});r.sec[sec.k]={y:y,n:n};r.Y+=y;r.N+=n});r.pct=r.Y+r.N?Math.round(r.Y/(r.Y+r.N)*100):null;return r}
 function answered(s){return Object.keys(s.a).length>0}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
@@ -205,18 +205,18 @@ $('recent').addEventListener('click',function(e){var b=e.target.closest('button[
 $('back').onclick=function(){go('home')};
 
 /* ===== Sheet view ===== */
-function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:EV(type).anon?'Secret shopper':(last.by||''),rest:last.rest||'',date:today(),part:partNow(),gen:'',a:{},n:{},created:t,updated:t}}
+function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:EV(type).anon?'Secret shopper':(last.by||''),rest:last.rest||'',date:today(),part:partNow(),gen:'',txn:'',a:{},n:{},created:t,updated:t}}
 function lists(){var m={},e={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1;if(s.by)e[s.by.trim()]=1});
   $('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');
   $('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
 function renderFields(){var e=EV(sh.type);renderSubmit();$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, optional)':'Team member being evaluated';
-  $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('out').hidden=true;needName();lists()}
+  $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('f_txn').value=sh.txn||'';$('txnrow').hidden=sh.type!=='shop';$('out').hidden=true;needName();lists()}
 function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!e.anon&&!sh.member.trim());$('f_by').classList.toggle('need',!e.anon&&!sh.by.trim());
   if(e.anon){$('barwho').textContent='Secret shopper · '+(sh.member.trim()?sh.member+' · ':'')+sh.part;return}
   $('barwho').textContent=e.person?(sh.member.trim()?sh.member+' · '+sh.part:'Enter the team member’s name'):(sh.by.trim()?e.short+' · '+sh.part:'Enter your name')}
 function renderItems(){var h='',T=sh.type;
   EV(T).secs.forEach(function(sec,si){h+='<h2>'+esc(sec.t)+'<small id="sc_'+sec.k+'"></small></h2>';
-    if(si===0)h+='<p class="legend"><span class="tag ss" style="margin:0 4px 0 0">Missed on Smart Shop</span> '+esc(SS_LEGEND)+'</p>';
+    if(si===0&&EV(T).secs.some(function(x){return x.items.some(function(it){return it[4]})}))h+='<p class="legend"><span class="tag ss" style="margin:0 4px 0 0">Missed on Smart Shop</span> '+esc(SS_LEGEND)+'</p>';
     sec.items.forEach(function(it){var id=iid(T,it),v=sh.a[id]||'';
       h+='<div class="item '+v+'" data-id="'+esc(id)+'"><div class="q">'+esc(it[1])+(it[2]?'':'<span class="tag">Unscored</span>')+ssTag(it)+'</div><div class="meta">'+esc(it[0])+'</div>'+
       '<div class="opts">'+[['y','Yes'],['n','No'],['na','N/A']].map(function(o){return'<button class="'+o[0]+(v===o[0]?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
@@ -233,14 +233,14 @@ function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[
 function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
   e.secs.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
     sec.items.forEach(function(it){var id=iid(s.type,it);if(s.a[id]==='n')t+='  ✗ '+it[0]+' '+it[1]+(it[2]?'':' (unscored)')+' – '+it[3]+(s.n[id]?' | Note: '+s.n[id]:'')+'\n'})});
-  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
+  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.type==='shop')t+='\nReceipt transaction #: '+(s.txn||'(not given)')+'\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
 
 var armed=false,dtm;
 function rst(){armed=false;clearTimeout(dtm);$('del').classList.remove('armed');$('del').textContent='Delete sheet'}
 $('del').onclick=function(){if(sh&&sh.submitted){toast('Submitted sheets can’t be deleted here.');return}if(!armed){armed=true;this.classList.add('armed');this.textContent='Tap again to delete';dtm=setTimeout(rst,3000);return}
   rst();var did=sh.id;delete L.sheets[did];delete L.mine[did];delete L.dirty[did];if(syncOn())L.dels[did]=1;L.cur=null;sh=null;lsave();queueSync();setStatus();go('home');toast('Sheet deleted.')};
-[['f_member','member'],['f_by','by'],['f_date','date'],['f_part','part'],['f_gen','gen']].forEach(function(p){
-  $(p[0]).addEventListener(p[0]==='f_part'?'change':'input',function(){sh[p[1]]=this.value;touch();if(p[1]!=='gen')needName()})});
+[['f_member','member'],['f_by','by'],['f_date','date'],['f_part','part'],['f_gen','gen'],['f_txn','txn']].forEach(function(p){
+  $(p[0]).addEventListener(p[0]==='f_part'?'change':'input',function(){if(sh.submitted){this.value=sh[p[1]]||'';touch();return}sh[p[1]]=this.value;touch();if(p[1]==='txn')this.classList.remove('need');else if(p[1]!=='gen')needName()})});
 $('sections').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(!b||sh.submitted)return;
   var row=b.closest('.item'),id=row.dataset.id,v=b.dataset.v;if(sh.a[id]===v)v='';
   if(v)sh.a[id]=v;else delete sh.a[id];touch();
@@ -256,7 +256,7 @@ $('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap ag
 /* ===== Secret Shopper submit ===== */
 function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
   $('submit').hidden=!shop||done;subArmed=false;$('pdf1').textContent=(shop||done)?'Save PDF copy':'Submit';$('subcard').hidden=!shop&&!done;$('v_sheet').classList.toggle('locked',done);
-  $('del').hidden=done;$('reset').hidden=done;
+  $('del').hidden=done;$('reset').hidden=done;['f_member','f_by','f_date','f_part','f_gen','f_txn'].forEach(function(k){$(k).disabled=done});
   if(!shop&&done)$('substate').innerHTML='<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> This sheet is final.';
   if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'}
 var subArmed=false;
@@ -264,7 +264,7 @@ $('submit').onclick=function(){var b=this;
   if(!answered(sh)){toast('Answer the items first.');return}
   if(!syncOn()||!L.spw){toast('Connect and unlock Secret Shopper first.');return}
   var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
-  if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+'Tap again to submit';setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
+  if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
   subArmed=false;b.textContent='Submit to store';
   sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();toast('Submitted. Sending to the store…')};
 function shopMail(s){var e=EV(s.type),out={subject:'Secret Shopper - '+fmtDate(s.date)+' '+s.part+(s.member?' - '+s.member:'')+' - '+(score(s).pct==null?'':score(s).pct+'%'),text:summary(s)};
@@ -318,7 +318,7 @@ function renderMgr(){if($('v_mgr').hidden||!L.mpw)return;
   E.forEach(function(s){var r=score(s);
     h+='<tr class="ev" data-id="'+esc(s.id)+'"><td>'+esc(fmtDate(s.date))+'</td>'+(e.person?'<td>'+esc(s.member||'(no name)')+'</td>':'')+'<td>'+esc(s.part)+'</td><td class="num"><b>'+(r.pct==null?'–':r.pct+'%')+'</b><br><small style="color:var(--muted)">'+r.N+' missed</small></td><td>'+esc(s.by||'—')+'</td></tr>';
     if(open[s.id]){var f='';allItems(t).forEach(function(x){if(s.a[x.id]==='n')f+='<li><b>'+esc(x.sec.t)+':</b> '+esc(x.it[1])+(x.it[2]?'':' (unscored)')+' – '+esc(x.it[3])+(s.n[x.id]?'<br><i>Note: '+esc(s.n[x.id])+'</i>':'')+'</li>'});
-      h+='<tr class="det"><td colspan="'+cols+'">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
+      h+='<tr class="det"><td colspan="'+cols+'">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.type==='shop'?'<p style="margin:8px 0 0"><b>Receipt transaction #:</b> '+esc(s.txn||'(not given)')+'</p>':'')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
   $('evtable').innerHTML=h+'</tbody></table>'}
 $('evtable').addEventListener('click',function(e){
   var o=e.target.closest('button[data-open]');if(o){if(pick(o.dataset.open)===false)return;location.hash='evaluate';go('sheet');return}
@@ -342,9 +342,9 @@ function filterLabel(){var p=[];if(EV(mType()).person&&$('m_member').value)p.pus
 function csvCell(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function ans(v){return v==='y'?'Yes':v==='n'?'No':v==='na'?'N/A':''}
 function rowHead(type){var e=EV(type),head=['Date','Day','Day part'].concat(e.person?['Team member']:[]).concat(['Evaluator','Score %','Compliant','Non-compliant']);
-  allItems(type).forEach(function(x){head.push((e.secs.length>1?x.sec.t+' - ':'')+x.it[0]+' '+x.it[1]+(x.it[2]?'':' (unscored)')+ssTxt(x.it));head.push(x.it[0]+' note')});head.push('Comments');return head}
+  allItems(type).forEach(function(x){head.push((e.secs.length>1?x.sec.t+' - ':'')+x.it[0]+' '+x.it[1]+(x.it[2]?'':' (unscored)')+ssTxt(x.it));head.push(x.it[0]+' note')});head.push('Comments');if(type==='shop')head.push('Transaction #');return head}
 function rowOf(s){var e=EV(s.type),r=score(s),row=[s.date,dayName(s.date),s.part].concat(e.person?[s.member]:[]).concat([s.by,r.pct==null?'':r.pct,r.Y,r.N]);
-  allItems(s.type).forEach(function(x){row.push(ans(s.a[x.id]));row.push(s.n[x.id]||'')});row.push(s.gen);return row}
+  allItems(s.type).forEach(function(x){row.push(ans(s.a[x.id]));row.push(s.n[x.id]||'')});row.push(s.gen);if(s.type==='shop')row.push(s.txn||'');return row}
 $('x_csv').onclick=function(){var E=filtered();if(!E.length)return;var t=mType();
   var rows=[rowHead(t)];E.slice().reverse().forEach(function(s){rows.push(rowOf(s))});
   var txt='﻿'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n');
@@ -364,7 +364,7 @@ function kv(doc,y,pairs){var x=40;doc.setFontSize(10);pairs.forEach(function(p){
 function sheetBody(doc,s,y){var e=EV(s.type),r=score(s),W=doc.internal.pageSize.getWidth();
   var top=(e.person?[['Team member',s.member||'(no name)',170]]:[]).concat([['Evaluator',s.by||'-',130],['Date',dayName(s.date)+' '+fmtDate(s.date),150],['Day part',s.part,80]]);
   y=kv(doc,y,top);
-  y=kv(doc,y,[['Score',r.pct==null?'-':r.pct+'%',90],['Compliant',String(r.Y),70],['Non-compliant',String(r.N),80]]);
+  y=kv(doc,y,[['Score',r.pct==null?'-':r.pct+'%',90],['Compliant',String(r.Y),70],['Non-compliant',String(r.N),80]].concat(s.type==='shop'?[['Receipt transaction #',s.txn||'(not given)',150]]:[]));
   var rows=[];e.secs.forEach(function(sec){if(e.secs.length>1)rows.push([{content:pdfText(sec.t),colSpan:4,styles:{fontStyle:'bold',fillColor:[229,233,238]}}]);
     sec.items.forEach(function(it){var id=iid(s.type,it),v=s.a[id];rows.push([it[0],pdfText(it[1])+(it[2]?'':' (unscored)')+(it[4]?'\n[Missed on Smart Shop: '+it[4]+']':''),ans(v)||'-',pdfText(v==='n'?it[3]+(s.n[id]?'\nNote: '+s.n[id]:''):(s.n[id]?'Note: '+s.n[id]:''))])})});
   doc.autoTable({startY:y,head:[['ID','Standard','Result','Details']],body:rows,margin:{left:40,right:40},styles:{fontSize:9,cellPadding:5,valign:'top'},headStyles:{fillColor:C.accent},
