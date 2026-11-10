@@ -183,14 +183,20 @@ function renderHome(){
 $('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(!b)return;var t=b.dataset.new;
   if(EV(t).locked&&!L.spw){$('lockcard').hidden=false;$('pw_err').textContent='';$('pw_in').value='';$('pw_in').focus();$('lockcard').scrollIntoView({block:'center'});return}
   add(t)});
-$('pw_go').onclick=function(){var pw=$('pw_in').value;if(!pw)return;
+/* Password check: time limit, one retry, never stuck on "Checking". */
+function pwCheck(q,errEl,btn,onOk){var tries=0,done=false,slow;
+  function fin(){done=true;clearTimeout(slow);btn.disabled=false}
+  function once(){tries++;var ctl=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ctl)ctl.abort()},20000);
+    fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+q+'&k='+encodeURIComponent(L.key)+'&t='+Date.now(),{cache:'no-store',redirect:'follow',signal:ctl?ctl.signal:undefined})
+    .then(function(r){return r.json()}).then(function(r){clearTimeout(tm);if(done)return;fin();errEl.textContent='';
+      try{if(!onOk(r))errEl.textContent=(r&&r.error==='bad_key')?'Wrong access key. Open the pinned GroupMe link again.':'Wrong password.'}catch(e){errEl.textContent='Something went wrong. Close the app and open it again.'}})
+    .catch(function(){clearTimeout(tm);if(done)return;if(tries<2){errEl.textContent='Still checking… (try 2 of 2)';once()}else{fin();errEl.textContent='Couldn’t reach the server. Check your signal and try again.'}})}
+  btn.disabled=true;errEl.textContent='Checking…';slow=setTimeout(function(){if(!done)errEl.textContent='Still checking… the server can be slow to wake up.'},6000);once()}
+$('pw_go').onclick=function(){var pw=$('pw_in').value.trim();if(!pw)return;
   if(!syncOn()){$('pw_err').textContent='This device isn’t connected. Open the pinned GroupMe link first.';return}
   if(navigator.onLine===false){$('pw_err').textContent='You need to be online to unlock.';return}
-  var b=this;b.disabled=true;$('pw_err').textContent='Checking…';
-  fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=spw&k='+encodeURIComponent(L.key)+'&pw='+encodeURIComponent(pw)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()}).then(function(r){b.disabled=false;
-    if(r&&r.ok&&r.shop){L.spw=pw;lsave();$('lockcard').hidden=true;$('pw_in').value='';add('shop')}
-    else $('pw_err').textContent=(r&&r.error==='bad_key')?'Wrong access key. Open the pinned GroupMe link again.':'Wrong password.'},
-  function(){b.disabled=false;$('pw_err').textContent='Couldn’t reach the server. Try again.'})};
+  pwCheck('action=spw&pw='+encodeURIComponent(pw),$('pw_err'),this,function(r){if(!(r&&r.ok&&r.shop))return false;
+    L.spw=pw;lsave();$('lockcard').hidden=true;$('pw_in').value='';add('shop');return true})};
 $('pw_in').addEventListener('keydown',function(e){if(e.key==='Enter')$('pw_go').click()});
 $('pw_cancel').onclick=function(){$('lockcard').hidden=true};
 $('relock').onclick=function(){if(Object.keys(L.dirty).some(function(k){return L.sheets[k]&&L.sheets[k].type==='shop'})){toast('Wait until your Secret Shopper sheet has synced, then lock.');return}
@@ -249,7 +255,7 @@ $('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap ag
 
 /* ===== Secret Shopper submit ===== */
 function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
-  $('submit').hidden=!shop||done;$('subcard').hidden=!shop;$('v_sheet').classList.toggle('locked',done);
+  $('submit').hidden=!shop||done;$('pdf1').textContent=shop?'Save PDF copy':'Submit';$('subcard').hidden=!shop;$('v_sheet').classList.toggle('locked',done);
   $('del').hidden=done;$('reset').hidden=done;
   if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'}
 var subArmed=false;
@@ -267,13 +273,10 @@ function shopMail(s){var e=EV(s.type),out={subject:'Secret Shopper - '+fmtDate(s
 /* ===== Manager lock ===== */
 function mgrLock(silent){L.mpw='';Object.keys(L.sheets).forEach(function(k){if(!L.mine[k]){delete L.sheets[k];delete L.dirty[k]}});lsave();if(view==='manager')go('manager');if(!silent)toast('Manager view is locked on this device.')}
 $('mgr_lock').onclick=function(){mgrLock(false)};
-$('mp_go').onclick=function(){var pw=$('mp_in').value;if(!pw)return;
+$('mp_go').onclick=function(){var pw=$('mp_in').value.trim();if(!pw)return;
   if(!syncOn()){$('mp_err').textContent='This device isn’t connected. Open the pinned GroupMe link first.';return}
-  var b=this;b.disabled=true;$('mp_err').textContent='Checking…';
-  fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=mpw&k='+encodeURIComponent(L.key)+'&mp='+encodeURIComponent(pw)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()}).then(function(r){b.disabled=false;
-    if(r&&r.ok&&r.mgr){L.mpw=pw;lsave();$('mp_in').value='';$('mp_err').textContent='';go('manager')}
-    else $('mp_err').textContent=(r&&r.error==='bad_key')?'Wrong access key. Open the pinned GroupMe link again.':'Wrong password.'},
-  function(){b.disabled=false;$('mp_err').textContent='Couldn’t reach the server. Try again.'})};
+  pwCheck('action=mpw&mp='+encodeURIComponent(pw),$('mp_err'),this,function(r){if(!(r&&r.ok&&r.mgr))return false;
+    L.mpw=pw;lsave();$('mp_in').value='';go('manager');return true})};
 $('mp_in').addEventListener('keydown',function(e){if(e.key==='Enter')$('mp_go').click()});
 
 /* ===== Manager view ===== */
