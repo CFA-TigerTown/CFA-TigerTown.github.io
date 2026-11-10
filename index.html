@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="IPOS Eval">
+<meta name="theme-color" content="#1e4e8c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>IPOS Evaluation</title>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--text:#1b2430;--muted:#64707e;--line:#d5dbe2;--ok:#1f7a4d;--okbg:#dff3e7;--bad:#b3203a;--badbg:#fbe3e8;--na:#56606c;--nabg:#e3e7ec;--accent:#1e4e8c;--accentfg:#fff;--barbg:#e5e9ee}
+@media (prefers-color-scheme:dark){:root{--bg:#12171d;--card:#1c232c;--text:#e8edf2;--muted:#95a1ae;--line:#323c48;--ok:#6fd3a0;--okbg:#17382a;--bad:#ff8aa0;--badbg:#44202a;--na:#b4bdc7;--nabg:#2b3440;--accent:#7fb2f0;--accentfg:#0c1a2b;--barbg:#2b3440}}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 140px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,BlinkMacSystemFont,"Avenir Next","Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--card);z-index:10}
+main{max-width:920px;margin:0 auto;padding:12px 14px 60px}
+h1{font-size:22px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 4px}
+.status{font-size:13px;color:var(--muted);margin:0 0 12px}
+.status b{color:var(--ok)}
+.status.warn b{color:var(--bad)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:14px}
+.tabs button{border:0;min-height:44px;font-weight:600;background:transparent;color:var(--muted)}
+.tabs button.on{background:var(--accent);color:var(--accentfg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:4px;flex:1 1 170px}
+label.wide{flex:2 1 260px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px;width:100%;-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:32px}
+input.need{border-color:var(--bad)}
+textarea{min-height:70px;resize:vertical}
+button{font:inherit;min-height:46px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;touch-action:manipulation}
+button.primary{background:var(--accent);color:var(--accentfg);border-color:var(--accent);font-weight:600}
+button.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+button:disabled{opacity:.5}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.pct{font-size:30px;font-weight:700;line-height:1}
+.who{font-weight:600}
+.chips{display:flex;gap:8px 12px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.chips b{color:var(--text)}
+h2{font-size:19px;margin:22px 4px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+h2 small{font-size:14px;color:var(--muted);font-weight:500}
+h3{font-size:17px;margin:0 0 10px}
+.item{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.item.y{border-left-color:var(--ok)}.item.n{border-left-color:var(--bad)}.item.na{border-left-color:var(--na)}
+.q{font-weight:500}
+.meta{font-size:13px;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--nabg);color:var(--na);margin-left:6px;font-weight:500}
+.tag.ss{background:var(--badbg);color:var(--bad);font-weight:600}
+.legend{font-size:13px;color:var(--muted);margin:-2px 4px 10px}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.opts button{min-height:52px;font-weight:600}
+.opts .y.on{background:var(--okbg);color:var(--ok);border-color:var(--ok)}
+.opts .n.on{background:var(--badbg);color:var(--bad);border-color:var(--bad)}
+.opts .na.on{background:var(--nabg);color:var(--na);border-color:var(--na)}
+.note{margin-top:10px}
+.note textarea{min-height:56px}
+.hint{font-size:13px;color:var(--bad);margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+#out{margin-top:10px;min-height:200px;font:14px/1.4 ui-monospace,Menlo,monospace}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .v{font-size:28px;font-weight:700;line-height:1.1}
+.kpi .l{font-size:13px;color:var(--muted)}
+.miss{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;margin-bottom:10px}
+.miss .t{font-size:15px}
+.miss .t small{color:var(--muted)}
+.miss .c{font-size:14px;color:var(--muted);text-align:right;white-space:nowrap}
+.track{grid-column:1/-1;height:8px;background:var(--barbg);border-radius:99px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--bad);border-radius:99px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;white-space:nowrap}
+tr.ev{cursor:pointer}
+tr.det td{background:var(--bg);font-size:14px}
+tr.det ul{margin:4px 0 0;padding-left:18px}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+.scroll{overflow-x:auto}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:15px;z-index:50;max-width:90vw;text-align:center}
+.small{font-size:13px;color:var(--muted);margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>IPOS Evaluation</h1>
+<p class="sub">Drive-thru IPOS (order taker) standards from Smart Shop, plus the store’s name-ask wording. Works offline and syncs to the shared sheet.</p>
+<p class="status" id="status"></p>
+
+<div class="tabs" role="tablist">
+  <button id="t_eval" class="on" role="tab">Evaluate</button>
+  <button id="t_mgr" role="tab">Manager view</button>
+</div>
+
+<!-- EVALUATE -->
+<section id="v_eval">
+<div class="card">
+  <div class="row">
+    <label class="wide">Saved sheets<select id="sel"></select></label>
+    <button class="primary" id="new">New sheet</button>
+    <button class="danger" id="del">Delete sheet</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <label class="wide">Team member being evaluated<input id="f_member" placeholder="Team member’s name" autocomplete="off" list="memberlist"></label>
+    <label class="wide">Evaluator name<input id="f_by" placeholder="Your name" autocomplete="off" list="evallist"></label>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <label>Date<input id="f_date" type="date"></label>
+    <label>Day part<select id="f_part"><option>Breakfast</option><option>Lunch</option><option>Afternoon</option><option>Dinner</option></select></label>
+  </div>
+  <datalist id="memberlist"></datalist><datalist id="evallist"></datalist>
+</div>
+
+<div class="bar">
+  <div><div class="pct" id="pct">–</div></div>
+  <div>
+    <div class="who" id="barwho"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<div class="card">
+  <label>Overall comments<textarea id="f_gen" placeholder="Anything else to coach on…"></textarea></label>
+  <div class="actions" style="margin-top:12px">
+    <button class="primary" id="pdf1">Export PDF</button>
+    <button id="sum">Copy summary</button>
+    <button id="reset">Clear answers</button>
+  </div>
+  <textarea id="out" hidden readonly></textarea>
+</div>
+</section>
+
+<!-- MANAGER -->
+<section id="v_mgr" hidden>
+<div class="card" id="keycard" hidden>
+  <h3>Connect to the shared sheet</h3>
+  <p class="small" style="margin:0 0 10px">This device isn’t connected, so it only shows its own evaluations. Open the pinned GroupMe link, or paste it here.</p>
+  <div class="row"><label class="wide">Pinned link or access key<input id="k_in" autocomplete="off" autocapitalize="off" spellcheck="false"></label><button class="primary" id="k_go">Connect</button></div>
+</div>
+<div class="card">
+  <div class="row">
+    <label>Team member<select id="m_member"></select></label>
+    <label>Day part<select id="m_part"></select></label>
+    <label>Evaluator<select id="m_by"></select></label>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <label>From<input id="m_from" type="date"></label>
+    <label>To<input id="m_to" type="date"></label>
+    <button id="m_clear">Clear filters</button>
+  </div>
+</div>
+<div class="card">
+  <h3>Export <small style="color:var(--muted);font-weight:500" id="expcount"></small></h3>
+  <div class="actions">
+    <button class="primary" id="x_pdf">PDF report</button>
+    <button id="x_csv">CSV (opens in Excel)</button>
+  </div>
+  <p class="small">Exports use the filters above. On iPad, pick “Save to Files”, Mail or AirDrop.</p>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="card"><h3>By team member</h3><div class="scroll" id="bymember"></div></div>
+<div class="card"><h3>Most missed standards</h3><div id="missed"></div></div>
+<div class="card"><h3>Evaluations <small style="color:var(--muted);font-weight:500">· tap a row for details</small></h3><div class="scroll" id="evtable"></div></div>
+<div class="card">
+  <h3>Backup</h3>
+  <div class="actions">
+    <button id="b_save">Save backup file</button>
+    <button id="b_load">Restore from backup</button>
+    <input type="file" id="b_file" accept=".json,application/json" hidden>
+  </div>
+  <p class="small" id="b_note">When connected, all evaluations are kept in your Google Sheet. A backup file is an extra copy you can keep in Files or iCloud Drive. Restoring adds sheets from the file and keeps the ones already here.</p>
+</div>
+</section>
+</main>
+
+<script src="config.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ===== Standards ===== */
+var S=[
+{k:'ipos',t:'IPOS',items:[
+['2.01.2','At least one team member available to take orders in the queue at all times',0,'No team member available'],
+['2.01.31','Conversations between team members stop when the guest approaches',1,'Team members kept talking'],
+['2.010.20','Team member offers a warm welcome',1,'No warm welcome'],
+['2.010.2','Order taker makes eye contact with the guest',1,'No eye contact'],
+['2.010.3','Order taker shares a smile',1,'No smile'],
+['2.010.4','Order taker speaks with a friendly tone of voice',1,'Tone not friendly'],
+['2.09.1','Silver (or embroidered) name tag visible on right chest',1,'Name tag not visible'],
+['2.02.2','Yellow Hi-Vis reflective safety wear with 360-degree coverage worn',0,'Hi-Vis wear not worn'],
+['2.03.4','Handheld menu available when menu boards aren’t clearly visible',1,'Not visible on team member and not offered'],
+['2.03.2','Team member proactively asks for sauce choice',1,'Did not proactively ask for sauce'],
+['2.03.3','Order confirmed in its entirety',1,'Order not confirmed in full'],
+['Store','Order taker asks “May I have your name for the order, please?”',1,'Did not use that wording (note what was said, if anything)'],
+['2.010.35','Order taker uses guest’s name in a sentence',1,'Did not use guest’s name'],
+['2.010.5','Order taker says “My Pleasure” when thanked',1,'Other response or none'],
+['2.010.40','Order taker gives clear verbal direction',1,'No clear verbal direction'],
+['2.010.21','Order taker offers a fond farewell',1,'No fond farewell']]}
+];
+var SS_MISS={'2.010.5':1,'2.03.4':1,'2.03.2':1,'2.010.35':1,'2.010.40':1,'2.010.21':1};
+var SS_LABEL='Missed on Smart Shop';
+function ssTag(code){return SS_MISS[code]?'<span class="tag ss">'+SS_LABEL+'</span>':''}
+var DEF_REST='#01445 TigerTown FSU', APP='IPOS Evaluation';
+function iid(it){return 'dt|'+it[0]}
+function allItems(){var a=[];S.forEach(function(x){x.items.forEach(function(it){a.push({sec:x,it:it})})});return a}
+
+/* ===== Helpers ===== */
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function partNow(){var d=new Date(),m=d.getHours()*60+d.getMinutes();return m<630?'Breakfast':m<840?'Lunch':m<1020?'Afternoon':'Dinner'}
+function dayName(d){try{return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'})}catch(e){return''}}
+function fmtDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch(e){return d}}
+function newId(){return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function obj(o){return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}
+function str(v,max){return typeof v==='string'?v.slice(0,max||500):''}
+function norm(id,d){d=obj(d);var a={},n={},A=obj(d.a),N=obj(d.n);
+  Object.keys(A).forEach(function(k){if(A[k]==='y'||A[k]==='n'||A[k]==='na')a[k]=A[k]});
+  Object.keys(N).forEach(function(k){var v=str(N[k],2000);if(v)n[k]=v});
+  return{id:id,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),a:a,n:n,created:+d.created||0,updated:+d.updated||0}}
+function score(s){var r={Y:0,N:0,sec:{}};S.forEach(function(sec){var y=0,n=0;sec.items.forEach(function(it){if(!it[2])return;var v=s.a[iid(it)];if(v==='y')y++;else if(v==='n')n++});r.sec[sec.k]={y:y,n:n};r.Y+=y;r.N+=n});r.pct=r.Y+r.N?Math.round(r.Y/(r.Y+r.N)*100):null;return r}
+function answered(s){return Object.keys(s.a).length>0}
+function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
+function slug(s){return String(s||'').trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'sheet'}
+
+/* ===== Storage (this iPad) ===== */
+var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',lastSync:0},storeOk=true;
+function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
+function lsave(){try{localStorage.setItem(KEY,JSON.stringify(L));if(!storeOk){storeOk=true;setStatus()}}catch(e){storeOk=false;setStatus()}}
+function setStatus(){var el=$('status'),n=Object.keys(L.sheets).filter(function(k){return answered(L.sheets[k])}).length;
+  if(!storeOk){el.className='status warn';el.innerHTML='<b>Not saving</b> · this browser is blocking storage. Open the app from the Home Screen icon.';return}
+  var tip=standalone()?'':' · tip: Share → Add to Home Screen';
+  if(!syncOn()){var any=!!(syncUrl()||L.key);el.className='status'+(any?' warn':'');el.innerHTML=any?'<b>Not connected</b> · saved on this device only. Open the pinned GroupMe link to connect.'+tip:'<b>Saved on this device</b> · '+n+' evaluation'+(n===1?'':'s')+tip;return}
+  var w=Object.keys(L.dirty).length+Object.keys(L.dels).length;
+  if(syncErr==='bad_key'){el.className='status warn';el.innerHTML='<b>Wrong access key</b> · open the pinned GroupMe link again.';return}
+  if(w||syncErr){el.className='status warn';el.innerHTML='<b>'+(syncing?'Syncing…':navigator.onLine===false?'Offline':'Not synced yet')+'</b> · '+w+' change'+(w===1?'':'s')+' waiting. Saved on this device, will send when online.'+tip;return}
+  el.className='status';el.innerHTML='<b>'+(syncing?'Syncing…':'Synced')+'</b> · '+n+' evaluation'+(n===1?'':'s')+' in the shared sheet'+(L.lastSync?' · last check '+new Date(L.lastSync).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'')+tip}
+function standalone(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+
+/* ===== Evaluate view ===== */
+var sh=null;
+function all(){return Object.keys(L.sheets).map(function(k){return L.sheets[k]})}
+function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]}).map(function(k){return L.sheets[k]})}
+function blank(){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),member:'',by:last.by||'',rest:last.rest||DEF_REST,date:today(),part:partNow(),gen:'',a:{},n:{},created:t,updated:t}}
+function label(s){return (s.member||'No name yet')+' · '+fmtDate(s.date)+' · '+s.part}
+function renderSel(){var h='';mine().sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||b.updated-a.updated}).forEach(function(s){h+='<option value="'+esc(s.id)+'"'+(sh&&s.id===sh.id?' selected':'')+'>'+esc(label(s))+'</option>'});$('sel').innerHTML=h;
+  var m={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1});$('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');var e={};all().forEach(function(s){if(s.by)e[s.by.trim()]=1});$('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
+function renderFields(){$('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('out').hidden=true;needName()}
+function needName(){$('f_member').classList.toggle('need',!sh.member.trim());$('f_by').classList.toggle('need',!sh.by.trim());$('barwho').textContent=sh.member.trim()?sh.member+' · '+sh.part:'Enter the team member’s name'}
+function renderItems(){var h='';
+  S.forEach(function(sec){h+='<h2>'+esc(sec.t)+'<small id="sc_'+sec.k+'"></small></h2><p class="legend"><span class="tag ss" style="margin:0 4px 0 0">'+SS_LABEL+'</span> = non-compliant on the October Smart Shop (Tuesday dinner).</p>';
+    sec.items.forEach(function(it){var id=iid(it),v=sh.a[id]||'';
+      h+='<div class="item '+v+'" data-id="'+esc(id)+'"><div class="q">'+esc(it[1])+(it[2]?'':'<span class="tag">Unscored</span>')+ssTag(it[0])+'</div><div class="meta">'+esc(it[0])+'</div>'+
+      '<div class="opts">'+[['y','Yes'],['n','No'],['na','N/A']].map(function(o){return'<button class="'+o[0]+(v===o[0]?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
+      '<div class="hint"'+(v==='n'?'':' hidden')+'>If No: '+esc(it[3])+'</div>'+
+      '<div class="note"'+(v==='n'||sh.n[id]?'':' hidden')+'><textarea placeholder="Notes (optional)" data-note="'+esc(id)+'">'+esc(sh.n[id]||'')+'</textarea></div></div>'})});
+  $('sections').innerHTML=h;scores()}
+function scores(){var r=score(sh),tot=0,ans=0;
+  S.forEach(function(sec){var c=r.sec[sec.k];$('sc_'+sec.k).textContent=c.y+' compliant · '+c.n+' non-compliant';sec.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(it)])ans++}})});
+  $('pct').textContent=r.pct==null?'–':r.pct+'%';
+  $('chips').innerHTML='<span><b>'+r.Y+'</b> compliant</span><span><b>'+r.N+'</b> non-compliant</span><span><b>'+ans+'</b> of '+tot+' scored answered</span>'}
+function touch(){sh.updated=Date.now();L.dirty[sh.id]=1;lsave();setStatus();queueSync()}
+function pick(id){L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderSel();renderFields();renderItems()}
+function add(){var s=blank();L.sheets[s.id]=s;L.mine[s.id]=1;pick(s.id);window.scrollTo(0,0);$('f_member').focus()}
+function summary(s){var r=score(s),t='IPOS evaluation\nTeam member: '+(s.member||'—')+'\nEvaluator: '+(s.by||'—')+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
+  S.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
+    sec.items.forEach(function(it){var id=iid(it);if(s.a[id]==='n')t+='  ✗ '+it[0]+' '+it[1]+(it[2]?'':' (unscored)')+' – '+it[3]+(s.n[id]?' | Note: '+s.n[id]:'')+'\n'})});
+  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
+
+$('new').onclick=add;
+$('sel').onchange=function(){pick(this.value)};
+var armed=false,dtm;
+function rst(){armed=false;clearTimeout(dtm);$('del').classList.remove('armed');$('del').textContent='Delete sheet'}
+$('del').onclick=function(){if(!armed){armed=true;this.classList.add('armed');this.textContent='Tap again to delete';dtm=setTimeout(rst,3000);return}
+  rst();var did=sh.id;delete L.sheets[did];delete L.mine[did];delete L.dirty[did];if(syncOn())L.dels[did]=1;queueSync();if(!mine().length){var b=blank();L.sheets[b.id]=b;L.mine[b.id]=1}pick(mine().sort(function(a,b){return b.updated-a.updated})[0].id);setStatus()};
+[['f_member','member'],['f_by','by'],['f_date','date'],['f_part','part'],['f_gen','gen']].forEach(function(p){
+  $(p[0]).addEventListener(p[0]==='f_part'?'change':'input',function(){sh[p[1]]=this.value;touch();if(p[1]==='member'||p[1]==='by'||p[1]==='date'||p[1]==='part'){renderSel();needName()}})});
+$('sections').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(!b)return;
+  var row=b.closest('.item'),id=row.dataset.id,v=b.dataset.v;if(sh.a[id]===v)v='';
+  if(v)sh.a[id]=v;else delete sh.a[id];touch();
+  row.className='item '+v;row.querySelectorAll('.opts button').forEach(function(x){x.classList.toggle('on',x.dataset.v===v)});
+  row.querySelector('.hint').hidden=v!=='n';row.querySelector('.note').hidden=!(v==='n'||sh.n[id]);scores()});
+$('sections').addEventListener('input',function(e){var id=e.target.dataset.note;if(!id)return;if(e.target.value)sh.n[id]=e.target.value;else delete sh.n[id];touch()});
+$('sum').onclick=function(){var o=$('out'),t=summary(sh),b=this;o.value=t;o.hidden=false;
+  try{navigator.clipboard.writeText(t).then(function(){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy summary'},2000)},function(){o.focus();o.select()})}catch(e){o.focus();o.select()}};
+var clr=false;
+$('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap again to clear';setTimeout(function(){clr=false;b.textContent='Clear answers'},3000);return}
+  clr=false;b.textContent='Clear answers';sh.a={};sh.n={};touch();renderItems()};
+
+/* ===== Manager view ===== */
+var open={};
+function pool(){return all().filter(answered)}
+function opts(sel,vals,all){var cur=sel.value;sel.innerHTML='<option value="">'+all+'</option>'+vals.map(function(v){return'<option'+(v===cur?' selected':'')+' value="'+esc(v)+'">'+esc(v)+'</option>'}).join('');if(vals.indexOf(cur)<0)sel.value=''}
+function uniq(a){var m={};a.forEach(function(x){if(x)m[x]=1});return Object.keys(m).sort()}
+function filtered(){var P=pool(),fb=$('m_by').value,fp=$('m_part').value,fm=$('m_member').value,f1=$('m_from').value,f2=$('m_to').value;
+  return P.filter(function(s){return(!fb||s.by.trim()===fb)&&(!fp||s.part===fp)&&(!fm||s.member.trim()===fm)&&(!f1||s.date>=f1)&&(!f2||s.date<=f2)}).sort(function(a,b){return(b.date||'').localeCompare(a.date||'')||b.updated-a.updated})}
+function pctTxt(y,n){return y+n?Math.round(y/(y+n)*100)+'%':'–'}
+function stats(E){var Y=0,N=0,sec={};S.forEach(function(x){sec[x.k]={y:0,n:0}});
+  E.forEach(function(s){var r=score(s);Y+=r.Y;N+=r.N;S.forEach(function(x){sec[x.k].y+=r.sec[x.k].y;sec[x.k].n+=r.sec[x.k].n})});
+  var bm={};E.forEach(function(s){var m=s.member.trim()||'(no name)';var r=score(s);bm[m]=bm[m]||{n:0,Y:0,N:0,last:'',lastPct:null};var o=bm[m];o.n++;o.Y+=r.Y;o.N+=r.N;if((s.date||'')>=o.last){o.last=s.date||'';o.lastPct=r.pct}});
+  var members=Object.keys(bm).map(function(m){var o=bm[m];return{m:m,o:o,pct:o.Y+o.N?o.Y/(o.Y+o.N):-1}}).sort(function(a,b){return a.pct-b.pct});
+  var st=[];allItems().forEach(function(x){var id=iid(x.it),y=0,n=0;E.forEach(function(s){if(s.a[id]==='y')y++;else if(s.a[id]==='n')n++});if(n)st.push({t:x.it[1],sec:x.sec.t,code:x.it[0],sc:x.it[2],n:n,d:y+n})});
+  st.sort(function(a,b){return b.n/b.d-a.n/a.d||b.n-a.n});
+  return{Y:Y,N:N,sec:sec,members:members,missed:st}}
+function renderMgr(){if($('v_mgr').hidden)return;
+  var P=pool();
+  opts($('m_by'),uniq(P.map(function(s){return s.by.trim()})),'All evaluators');
+  opts($('m_part'),['Breakfast','Lunch','Afternoon','Dinner'].filter(function(p){return P.some(function(s){return s.part===p})}),'All day parts');
+  opts($('m_member'),uniq(P.map(function(s){return s.member.trim()})),'All team members');
+  var E=filtered();$('expcount').textContent='· '+E.length+' evaluation'+(E.length===1?'':'s');
+  $('x_pdf').disabled=$('x_csv').disabled=!E.length;
+  if(!E.length){$('kpis').innerHTML='';['bymember','missed'].forEach(function(i){$(i).innerHTML='<div class="empty">No evaluations yet.</div>'});$('evtable').innerHTML='<div class="empty">No evaluations match. Sheets show here once they have at least one answer.</div>';return}
+  var T=stats(E);
+  var k='<div class="kpi"><div class="v">'+pctTxt(T.Y,T.N)+'</div><div class="l">Overall compliance</div></div><div class="kpi"><div class="v">'+E.length+'</div><div class="l">Evaluations</div></div><div class="kpi"><div class="v">'+T.members.length+'</div><div class="l">Team members</div></div>';
+  if(S.length>1)S.forEach(function(x){k+='<div class="kpi"><div class="v">'+pctTxt(T.sec[x.k].y,T.sec[x.k].n)+'</div><div class="l">'+esc(x.t)+'</div></div>'});
+  $('kpis').innerHTML=k;
+  $('bymember').innerHTML='<table><thead><tr><th>Team member</th><th class="num">Evals</th><th class="num">Avg score</th><th class="num">Latest</th><th class="num">Last eval</th></tr></thead><tbody>'+
+    T.members.map(function(r){return'<tr><td>'+esc(r.m)+'</td><td class="num">'+r.o.n+'</td><td class="num"><b>'+pctTxt(r.o.Y,r.o.N)+'</b></td><td class="num">'+(r.o.lastPct==null?'–':r.o.lastPct+'%')+'</td><td class="num">'+esc(fmtDate(r.o.last))+'</td></tr>'}).join('')+'</tbody></table>';
+  $('missed').innerHTML=T.missed.length?T.missed.slice(0,10).map(function(m){var r=Math.round(m.n/m.d*100);return'<div class="miss"><div class="t">'+esc(m.t)+(m.sc?'':'<span class="tag">Unscored</span>')+ssTag(m.code)+'<br><small>'+esc(m.code)+'</small></div><div class="c"><b>'+r+'%</b> missed<br>'+m.n+' of '+m.d+'</div><div class="track"><i style="width:'+r+'%"></i></div></div>'}).join(''):'<div class="empty">Nothing missed. Nice.</div>';
+  var h='<table><thead><tr><th>Date</th><th>Team member</th><th>Day part</th><th class="num">Score</th><th>Evaluator</th></tr></thead><tbody>';
+  E.forEach(function(s){var r=score(s);
+    h+='<tr class="ev" data-id="'+esc(s.id)+'"><td>'+esc(fmtDate(s.date))+'</td><td>'+esc(s.member||'(no name)')+'</td><td>'+esc(s.part)+'</td><td class="num"><b>'+(r.pct==null?'–':r.pct+'%')+'</b><br><small style="color:var(--muted)">'+r.N+' missed</small></td><td>'+esc(s.by||'—')+'</td></tr>';
+    if(open[s.id]){var f='';allItems().forEach(function(x){var id=iid(x.it);if(s.a[id]==='n')f+='<li>'+esc(x.it[1])+(x.it[2]?'':' (unscored)')+' – '+esc(x.it[3])+(s.n[id]?'<br><i>Note: '+esc(s.n[id])+'</i>':'')+'</li>'});
+      h+='<tr class="det"><td colspan="5">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
+  $('evtable').innerHTML=h+'</tbody></table>'}
+$('evtable').addEventListener('click',function(e){
+  var o=e.target.closest('button[data-open]');if(o){pick(o.dataset.open);show('evaluate');location.hash='evaluate';window.scrollTo(0,0);return}
+  var p=e.target.closest('button[data-pdf]');if(p){pdfSheet(L.sheets[p.dataset.pdf]);return}
+  var tr=e.target.closest('tr.ev');if(!tr)return;var id=tr.dataset.id;open[id]=!open[id];renderMgr()});
+['m_by','m_part','m_member','m_from','m_to'].forEach(function(i){$(i).onchange=renderMgr});
+$('m_clear').onclick=function(){['m_by','m_part','m_member','m_from','m_to'].forEach(function(i){$(i).value=''});renderMgr()};
+
+/* ===== File output ===== */
+function deliver(blob,name){
+  var file=null;try{file=new File([blob],name,{type:blob.type})}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:name}).catch(function(err){if(err&&err.name!=='AbortError')download(blob,name)});return}
+  download(blob,name)}
+function download(blob,name){var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},4000)}
+function stamp(){var d=new Date();return today()+'_'+('0'+d.getHours()).slice(-2)+('0'+d.getMinutes()).slice(-2)}
+function filterLabel(){var p=[];if($('m_member').value)p.push($('m_member').value);if($('m_part').value)p.push($('m_part').value);if($('m_by').value)p.push('Evaluator: '+$('m_by').value);
+  if($('m_from').value||$('m_to').value)p.push(($('m_from').value?fmtDate($('m_from').value):'start')+' to '+($('m_to').value?fmtDate($('m_to').value):'today'));return p.length?p.join(' · '):'All evaluations'}
+
+/* CSV */
+function csvCell(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function ans(v){return v==='y'?'Yes':v==='n'?'No':v==='na'?'N/A':''}
+function rowHead(){var head=['Date','Day','Day part','Team member','Evaluator','Score %','Compliant','Non-compliant'];
+  allItems().forEach(function(x){head.push(x.it[0]+' '+x.it[1]+(x.it[2]?'':' (unscored)')+(SS_MISS[x.it[0]]?' [Missed on Smart Shop]':''));head.push(x.it[0]+' note')});head.push('Comments');return head}
+function rowOf(s){var r=score(s),row=[s.date,dayName(s.date),s.part,s.member,s.by,r.pct==null?'':r.pct,r.Y,r.N];
+  allItems().forEach(function(x){var id=iid(x.it);row.push(ans(s.a[id]));row.push(s.n[id]||'')});row.push(s.gen);return row}
+$('x_csv').onclick=function(){var E=filtered();if(!E.length)return;
+  var rows=[rowHead()];E.slice().reverse().forEach(function(s){rows.push(rowOf(s))});
+  var txt='﻿'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n');
+  deliver(new Blob([txt],{type:'text/csv'}),'IPOS-evaluations_'+stamp()+'.csv')};
+
+/* PDF */
+function pdfText(s){return String(s==null?'':s).replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/–|—/g,'-').replace(/·/g,'-').replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ]/g,'')}
+function newDoc(){if(!window.jspdf||!window.jspdf.jsPDF){toast('PDF tool did not load. Open the app once while online.');return null}
+  var doc=new window.jspdf.jsPDF({unit:'pt',format:'letter'});if(typeof doc.autoTable!=='function'){toast('PDF table tool did not load. Open the app once while online.');return null}return doc}
+var C={accent:[30,78,140],ok:[31,122,77],bad:[179,32,58],muted:[100,112,126],okbg:[223,243,231],badbg:[251,227,232]};
+function pdfHeader(doc,title,sub){var W=doc.internal.pageSize.getWidth();doc.setFillColor.apply(doc,C.accent);doc.rect(0,0,W,58,'F');
+  doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text(pdfText(title),40,36);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(pdfText(sub),W-40,36,{align:'right'});doc.setTextColor(0);return 84}
+function pdfFooter(doc){var n=doc.internal.getNumberOfPages(),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();
+  for(var i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor.apply(doc,C.muted);doc.text(pdfText(APP+' - exported '+new Date().toLocaleString('en-US')),40,H-24);doc.text('Page '+i+' of '+n,W-40,H-24,{align:'right'})}doc.setTextColor(0)}
+function kv(doc,y,pairs){var x=40;doc.setFontSize(10);pairs.forEach(function(p){doc.setTextColor.apply(doc,C.muted);doc.setFont('helvetica','normal');doc.text(pdfText(p[0]),x,y);doc.setTextColor(0);doc.setFont('helvetica','bold');doc.text(pdfText(p[1]||'-'),x,y+14);x+=p[2]||130});return y+34}
+function sheetBody(doc,s,y){var r=score(s),W=doc.internal.pageSize.getWidth();
+  y=kv(doc,y,[['Team member',s.member||'(no name)',170],['Evaluator',s.by||'-',130],['Date',dayName(s.date)+' '+fmtDate(s.date),150],['Day part',s.part,80]]);
+  y=kv(doc,y,[['Score',r.pct==null?'-':r.pct+'%',90],['Compliant',String(r.Y),70],['Non-compliant',String(r.N),80]]);
+  var rows=[];allItems().forEach(function(x){var id=iid(x.it),v=s.a[id];rows.push([x.it[0],pdfText(x.it[1])+(x.it[2]?'':' (unscored)')+(SS_MISS[x.it[0]]?'\n[Missed on Smart Shop]':''),ans(v)||'-',pdfText(v==='n'?x.it[3]+(s.n[id]?'\nNote: '+s.n[id]:''):(s.n[id]?'Note: '+s.n[id]:''))])});
+  doc.autoTable({startY:y,head:[['ID','Standard','Result','Details']],body:rows,margin:{left:40,right:40},styles:{fontSize:9,cellPadding:5,valign:'top'},headStyles:{fillColor:C.accent},
+    columnStyles:{0:{cellWidth:52},1:{cellWidth:240},2:{cellWidth:50,fontStyle:'bold',halign:'center'},3:{cellWidth:'auto'}},
+    didParseCell:function(d){if(d.section==='body'&&d.column.index===2){var t=d.cell.raw;if(t==='Yes'){d.cell.styles.textColor=C.ok;d.cell.styles.fillColor=C.okbg}else if(t==='No'){d.cell.styles.textColor=C.bad;d.cell.styles.fillColor=C.badbg}}}});
+  y=doc.lastAutoTable.finalY+18;
+  if(s.gen){if(y>doc.internal.pageSize.getHeight()-100){doc.addPage();y=50}doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Overall comments',40,y);doc.setFont('helvetica','normal');doc.setFontSize(10);
+    var lines=doc.splitTextToSize(pdfText(s.gen),W-80);doc.text(lines,40,y+16);y+=16+lines.length*12}
+  return y}
+function pdfSheet(s){var doc=newDoc();if(!doc)return;var y=pdfHeader(doc,'IPOS Evaluation',fmtDate(s.date)+' - '+s.part);sheetBody(doc,s,y);pdfFooter(doc);
+  deliver(doc.output('blob'),'IPOS_'+slug(s.member)+'_'+(s.date||today())+'.pdf')}
+$('pdf1').onclick=function(){if(!answered(sh)){toast('Answer at least one item first.');return}pdfSheet(sh)};
+$('x_pdf').onclick=function(){var E=filtered();if(!E.length)return;var doc=newDoc();if(!doc)return;var T=stats(E),H=doc.internal.pageSize.getHeight();
+  var y=pdfHeader(doc,'IPOS Evaluation Report',filterLabel());
+  y=kv(doc,y,[['Overall compliance',pctTxt(T.Y,T.N),130],['Evaluations',String(E.length),100],['Team members',String(T.members.length),110],['Compliant / non-compliant',T.Y+' / '+T.N,150]]);
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('By team member',40,y+6);
+  doc.autoTable({startY:y+14,head:[['Team member','Evals','Avg score','Latest','Last eval']],body:T.members.map(function(r){return[pdfText(r.m),r.o.n,pctTxt(r.o.Y,r.o.N),r.o.lastPct==null?'-':r.o.lastPct+'%',fmtDate(r.o.last)]}),
+    margin:{left:40,right:40},styles:{fontSize:9,cellPadding:5},headStyles:{fillColor:C.accent},columnStyles:{1:{halign:'right'},2:{halign:'right',fontStyle:'bold'},3:{halign:'right'},4:{halign:'right'}},didParseCell:function(d){if(d.section==='head'&&d.column.index>0)d.cell.styles.halign='right'}});
+  y=doc.lastAutoTable.finalY+24;if(y>H-120){doc.addPage();y=50}
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('Most missed standards',40,y);
+  doc.autoTable({startY:y+8,head:[['ID','Standard','Missed','Rate']],body:T.missed.length?T.missed.map(function(m){return[m.code,pdfText(m.t)+(m.sc?'':' (unscored)')+(SS_MISS[m.code]?' [Missed on Smart Shop]':''),m.n+' of '+m.d,Math.round(m.n/m.d*100)+'%']}):[['','Nothing missed','','']],
+    margin:{left:40,right:40},styles:{fontSize:9,cellPadding:5},headStyles:{fillColor:C.accent},columnStyles:{0:{cellWidth:52},2:{halign:'right',cellWidth:60},3:{halign:'right',cellWidth:50,fontStyle:'bold'}},didParseCell:function(d){if(d.section==='head'&&d.column.index>1)d.cell.styles.halign='right'}});
+  y=doc.lastAutoTable.finalY+24;if(y>H-120){doc.addPage();y=50}
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('Evaluations',40,y);
+  doc.autoTable({startY:y+8,head:[['Date','Team member','Day part','Score','Missed','Evaluator']],body:E.map(function(s){var r=score(s),m=[];allItems().forEach(function(x){var id=iid(x.it);if(s.a[id]==='n')m.push(pdfText(x.it[1])+(s.n[id]?' (Note: '+pdfText(s.n[id])+')':''))});
+      return[fmtDate(s.date),pdfText(s.member||'(no name)'),s.part,r.pct==null?'-':r.pct+'%',m.length?m.join('\n'):'-',pdfText(s.by||'-')]}),
+    margin:{left:40,right:40},styles:{fontSize:8.5,cellPadding:4,valign:'top'},headStyles:{fillColor:C.accent},columnStyles:{0:{cellWidth:66},1:{cellWidth:90},2:{cellWidth:56},3:{cellWidth:38,halign:'right',fontStyle:'bold'},5:{cellWidth:70}}});
+  /* one page per evaluation */
+  E.forEach(function(s){doc.addPage();var yy=pdfHeader(doc,'IPOS Evaluation',fmtDate(s.date)+' - '+s.part);sheetBody(doc,s,yy)});
+  pdfFooter(doc);deliver(doc.output('blob'),'IPOS-report_'+stamp()+'.pdf')};
+
+/* ===== Backup ===== */
+$('b_save').onclick=function(){var data={app:'ipos-eval',version:1,exported:new Date().toISOString(),sheets:L.sheets};
+  deliver(new Blob([JSON.stringify(data)],{type:'application/json'}),'IPOS-backup_'+stamp()+'.json')};
+$('b_load').onclick=function(){$('b_file').value='';$('b_file').click()};
+$('b_file').onchange=function(){var f=this.files&&this.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{var p=JSON.parse(rd.result),src=obj(p.sheets),added=0,updated=0;
+      Object.keys(src).forEach(function(k){var s=norm(k,src[k]);if(!L.sheets[k]){L.sheets[k]=s;L.dirty[k]=1;added++}else if(L.sheets[k].updated<s.updated){L.sheets[k]=s;L.dirty[k]=1;updated++}});
+      lsave();queueSync();renderSel();renderMgr();setStatus();toast('Restored: '+added+' added, '+updated+' updated.')}catch(e){toast('That file is not an IPOS backup.')}};
+  rd.readAsText(f)};
+
+/* ===== Sync (Google Sheet via Apps Script) ===== */
+var SYNC_URL='',syncing=false,syncErr='',stimer=null;
+function syncUrl(){var c=String(window.IPOS_SYNC_URL||'').trim();return c||(L.sid?'https://script.google.com/macros/s/'+L.sid+'/exec':'')}
+function syncOn(){SYNC_URL=syncUrl();return !!(SYNC_URL&&L.key)}
+function readKey(v){v=String(v||'').trim();var m=v.match(/[?&#]k=([A-Za-z0-9_-]+)/);return m?m[1]:(/^[A-Za-z0-9_-]{6,}$/.test(v)?v:'')}
+function readSid(v){var m=String(v||'').match(/[?&#]s=([A-Za-z0-9_-]{20,})/)||String(v||'').match(/macros\/s\/([A-Za-z0-9_-]{20,})/);return m?m[1]:''}
+function takeKeyFromUrl(){var k=readKey(location.search)||readKey(location.hash),d=readSid(location.search)||readSid(location.hash);if(d&&d!==L.sid){L.sid=d;syncErr='';lsave()}if(k&&k!==L.key){L.key=k;syncErr='';lsave()}}
+function queueSync(){if(!syncOn())return;clearTimeout(stimer);stimer=setTimeout(push,1200)}
+function api(method,body){
+  if(method==='GET')return fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(L.key)+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()});
+  body.k=L.key;return fetch(SYNC_URL,{method:'POST',body:JSON.stringify(body),redirect:'follow'}).then(function(r){return r.json()})}
+function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=Object.keys(L.dels);if(!ids.length&&!dels.length)return;
+  var put=ids.filter(function(k){return L.sheets[k]&&(answered(L.sheets[k])||L.sheets[k].member)}).map(function(k){var s=L.sheets[k];return{id:k,updated:s.updated,data:s,cols:rowOf(s)}});
+  ids.forEach(function(k){if(!L.sheets[k]||!(answered(L.sheets[k])||L.sheets[k].member))delete L.dirty[k]});
+  if(!put.length&&!dels.length){lsave();setStatus();return}
+  var sent={};put.forEach(function(x){sent[x.id]=x.updated});
+  syncing=true;setStatus();
+  api('POST',{put:put,del:dels,head:rowHead()}).then(function(r){syncing=false;
+    if(!r||!r.ok){syncErr=r&&r.error||'error';setStatus();if(syncErr!=='bad_key')setTimeout(push,30000);return}
+    syncErr='';(r.saved||[]).forEach(function(k){if(L.sheets[k]&&L.sheets[k].updated===sent[k])delete L.dirty[k]});(r.deleted||[]).forEach(function(k){delete L.dels[k]});
+    lsave();setStatus();if(Object.keys(L.dirty).length)queueSync()},
+  function(){syncing=false;syncErr='offline';setStatus();setTimeout(push,30000)})}
+var pulling=false;
+function pull(){if(!syncOn()||pulling)return;pulling=true;
+  api('GET').then(function(r){pulling=false;
+    if(!r||!r.ok){syncErr=r&&r.error||'error';setStatus();return}
+    syncErr=Object.keys(L.dirty).length?syncErr:'';
+    var gone={};(r.deleted||[]).forEach(function(k){gone[k]=1});
+    Object.keys(gone).forEach(function(k){if(L.sheets[k]&&k!==L.cur){delete L.sheets[k];delete L.mine[k];delete L.dirty[k]}});
+    var curChanged=false;
+    (r.items||[]).forEach(function(it){if(gone[it.id])return;var loc=L.sheets[it.id];
+      if(!loc||(+it.updated>loc.updated&&!L.dirty[it.id])){L.sheets[it.id]=norm(it.id,it.data);L.sheets[it.id].updated=+it.updated||L.sheets[it.id].updated;if(it.id===L.cur)curChanged=true}});
+    L.lastSync=Date.now();lsave();
+    if(curChanged){var ae=document.activeElement;sh=L.sheets[L.cur];if(!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))){renderFields();renderItems()}}
+    renderSel();renderMgr();setStatus();push()},
+  function(){pulling=false;syncErr='offline';setStatus()})}
+$('k_go').onclick=function(){var v=$('k_in').value,k=readKey(v),d=readSid(v);if(d)L.sid=d;if(!k){toast('That doesn’t look like the pinned link.');return}L.key=k;syncErr='';lsave();
+  Object.keys(L.sheets).forEach(function(id){if(answered(L.sheets[id]))L.dirty[id]=1});lsave();$('keycard').hidden=true;pull();setStatus()};
+window.addEventListener('online',function(){syncErr='';pull()});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)pull()});
+setInterval(function(){if(!document.hidden)pull()},60000);
+
+/* ===== Tabs ===== */
+function show(v){var m=v==='manager';if(m)pull();$('v_eval').hidden=m;$('v_mgr').hidden=!m;$('t_eval').classList.toggle('on',!m);$('t_mgr').classList.toggle('on',m);if(m){$('keycard').hidden=syncOn();renderMgr()}}
+$('t_eval').onclick=function(){location.hash='evaluate';show('evaluate')};
+$('t_mgr').onclick=function(){location.hash='manager';show('manager')};
+window.addEventListener('hashchange',function(){takeKeyFromUrl();show(location.hash.slice(1))});
+
+/* ===== Start ===== */
+lload();takeKeyFromUrl();
+if(!mine().length){var b0=blank();L.sheets[b0.id]=b0;L.mine[b0.id]=1;L.cur=b0.id}
+pick(L.cur&&L.sheets[L.cur]&&L.mine[L.cur]?L.cur:mine().sort(function(a,b){return b.updated-a.updated})[0].id);
+show(location.hash.slice(1));
+setStatus();pull();push();
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(function(){})}
+</script>
+</body>
+</html>
