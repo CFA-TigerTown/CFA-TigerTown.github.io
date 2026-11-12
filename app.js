@@ -267,8 +267,18 @@ $('submit').onclick=function(){var b=this;
   if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
   subArmed=false;b.textContent='Submit to store';
   sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();toast('Submitted. Sending to the store…')};
+function shopHtml(s){var e=EV(s.type),r=score(s),H=function(x){return esc(String(x==null?'':x))};
+  var h='<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;margin:24px}h1{background:#1e4e8c;color:#fff;font-size:18px;padding:12px 14px;margin:0 0 14px}'+
+  'table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #ccd;padding:5px;vertical-align:top;text-align:left}th{background:#1e4e8c;color:#fff}.y{color:#1f7a4d;background:#dff3e7;font-weight:bold;text-align:center}.n{color:#b3203a;background:#fbe3e8;font-weight:bold;text-align:center}.c{text-align:center}.sec td{background:#e5e9ee;font-weight:bold}.kv td{border:none;padding:2px 14px 6px 0}.kv b{font-size:13px}</style></head><body>';
+  h+='<h1>'+H(e.t)+' Evaluation</h1><table class="kv"><tr><td>Team member<br><b>'+H(s.member||'(not given)')+'</b></td><td>Date<br><b>'+H(dayName(s.date)+' '+fmtDate(s.date))+'</b></td><td>Day part<br><b>'+H(s.part)+'</b></td><td>Receipt transaction #<br><b>'+H(s.txn||'(not given)')+'</b></td></tr>'+
+  '<tr><td>Score<br><b>'+(r.pct==null?'-':r.pct+'%')+'</b></td><td>Compliant<br><b>'+r.Y+'</b></td><td>Non-compliant<br><b>'+r.N+'</b></td><td></td></tr></table><br>';
+  h+='<table><tr><th style="width:60px">ID</th><th>Standard</th><th style="width:50px">Result</th><th>Details</th></tr>';
+  e.secs.forEach(function(sec){if(e.secs.length>1)h+='<tr class="sec"><td colspan="4">'+H(sec.t)+'</td></tr>';
+    sec.items.forEach(function(it){var id=iid(s.type,it),v=s.a[id],a=ans(v)||'-';h+='<tr><td>'+H(it[0])+'</td><td>'+H(it[1])+(it[2]?'':' (unscored)')+'</td><td class="'+(v==='y'?'y':v==='n'?'n':'c')+'">'+a+'</td><td>'+(v==='n'?H(it[3])+(s.n[id]?'<br>':''):'')+(s.n[id]?'Note: '+H(s.n[id]):'')+'</td></tr>'})});
+  h+='</table>'+(s.gen?'<p><b>Overall comments</b><br>'+H(s.gen).replace(/\n/g,'<br>')+'</p>':'')+'</body></html>';return h}
 function shopMail(s){var e=EV(s.type),out={subject:'Secret Shopper - '+fmtDate(s.date)+' '+s.part+(s.member?' - '+s.member:'')+' - '+(score(s).pct==null?'':score(s).pct+'%'),text:summary(s)};
   try{var doc=newDoc();if(doc){var y=pdfHeader(doc,e.t+' Evaluation',fmtDate(s.date)+' - '+s.part);sheetBody(doc,s,y);pdfFooter(doc);out.pdf=doc.output('datauristring').split(',')[1];out.pdfName='Secret-Shopper_'+(s.date||today())+'.pdf'}}catch(err){}
+  try{out.html=shopHtml(s);if(!out.pdfName)out.pdfName='Secret-Shopper_'+(s.date||today())+'.pdf'}catch(err){}
   return out}
 
 /* ===== Manager lock ===== */
