@@ -219,7 +219,7 @@ function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updat
 function lists(){var m={},e={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1;if(s.by)e[s.by.trim()]=1});
   $('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');
   $('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
-function renderFields(){var e=EV(sh.type);renderSubmit();$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, optional)':'Team member being evaluated';
+function renderFields(){var e=EV(sh.type);renderSubmit();$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, required)':'Team member being evaluated';
   $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('f_txn').value=sh.txn||'';$('txnrow').hidden=sh.type!=='shop';$('out').hidden=true;needName();lists()}
 function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!e.anon&&!sh.member.trim());$('f_by').classList.toggle('need',!e.anon&&!sh.by.trim());
   if(e.anon){$('barwho').textContent='Secret shopper · '+(sh.member.trim()?sh.member+' · ':'')+sh.part;return}
@@ -272,6 +272,7 @@ function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
 var subArmed=false;
 $('submit').onclick=function(){var b=this;
   if(!answered(sh)){toast('Answer the items first.');return}
+  if(!sh.member.trim()){var fm=$('f_member');fm.classList.add('need');fm.scrollIntoView({block:'center'});fm.focus();toast('Enter the team member’s name first. Look at their name tag.');return}
   if(!syncOn()||!L.spw){toast('Connect and unlock Secret Shopper first.');return}
   var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
   if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
