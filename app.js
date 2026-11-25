@@ -238,7 +238,7 @@ function scores(){var r=score(sh),tot=0,ans=0;
   $('pct').textContent=r.pct==null?'–':r.pct+'%';
   $('chips').innerHTML='<span><b>'+r.Y+'</b> compliant</span><span><b>'+r.N+'</b> non-compliant</span><span><b>'+ans+'</b> of '+tot+' scored answered</span>'}
 function touch(){if(sh.submitted){toast('This sheet was submitted and can’t be changed.');return}sh.updated=Date.now();L.dirty[sh.id]=1;lsave();setStatus();queueSync()}
-function pick(id){if(!L.sheets[id])return;if(L.sheets[id].type==='shop'&&!L.spw){toast('Secret Shopper sheets need the password.');return false}L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderFields();renderItems()}
+function pick(id){if(!L.sheets[id])return;if(L.sheets[id].type==='shop'&&!L.spw&&!L.mpw){toast('Secret Shopper sheets need the password.');return false}L.cur=id;sh=L.sheets[id];L.mine[id]=1;lsave();renderFields();renderItems()}
 function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[s.id]=s;L.mine[s.id]=1;lsave();pick(s.id);go('sheet');(EV(type).person?$('f_member'):$('f_by')).focus();return s}
 function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
   e.secs.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
