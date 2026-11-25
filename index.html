@@ -102,20 +102,28 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 <body>
 <main>
 <h1>TigerTown Evaluations</h1>
-<p class="sub">IPOS, Carry Out &amp; Facilities, Back of House and Secret Shopper checks from Smart Shop. Works offline and syncs to the shared sheet.</p>
+<p class="sub" id="subline">IPOS, Carry Out &amp; Facilities, Back of House and Secret Shopper checks from Smart Shop. Works offline and syncs to the shared sheet.</p>
 <p class="status" id="status"></p>
 
-<div class="tabs" role="tablist">
+<div class="tabs" role="tablist" id="tabs">
   <button id="t_eval" class="on" role="tab">Evaluate</button>
   <button id="t_mgr" role="tab">Manager view</button>
 </div>
 
 <!-- HOME: pick an evaluation -->
 <section id="v_home">
-<div class="card">
-  <h3>Start a new evaluation</h3>
+<div class="card" id="rolecard" hidden>
+  <h3>Who is doing the evaluation?</h3>
+  <div class="big" id="roles">
+    <button data-role="shop"><b>Secret Shopper</b><span>Secret shoppers click here.</span></button>
+    <button data-role="lead"><b>Chick-fil-A TigerTown Leader</b><span>Chick-fil-A TigerTown leaders click here.</span></button>
+  </div>
+</div>
+<div class="card" id="evalcard" hidden>
+  <h3 id="menutitle">Start a new evaluation</h3>
   <div class="big" id="pickers"></div>
   <button class="back" id="relock" hidden style="margin-top:8px">🔒 Lock Secret Shopper on this device</button>
+  <button class="back" id="switchrole" style="margin-top:8px"></button>
 </div>
 <div class="card" id="lockcard" hidden>
   <h3>Secret Shopper password</h3>
