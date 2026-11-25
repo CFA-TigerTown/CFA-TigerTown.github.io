@@ -126,6 +126,10 @@ boh:{t:'Back of House',short:'Back of House',d:'Food quality and packaging check
 };
 EVALS.shop={t:'Secret Shopper (Drive-thru)',short:'Secret Shopper',d:'Thank you for helping make our team better!',person:true,anon:true,locked:true,pre:'ss',secs:EVALS.ipos.secs.map(function(sec){return{k:sec.k,t:sec.t,items:sec.items.map(function(it){return it.slice(0,4)})}})}; /* no Smart Shop miss tags for shoppers */
 var ORDER=['ipos','co','boh','shop'];
+/* Home menus by role. Add more evaluations to a list to show them in that menu. */
+var MENUS={lead:{evals:['ipos','co','boh'],mgr:true,title:'Start a new evaluation',sw:'↩ Not a TigerTown leader? Switch to Secret Shopper'},
+  shop:{evals:['shop'],mgr:false,title:'Start your evaluation',sw:'↩ Not a secret shopper? Switch to TigerTown Leader',sub:'Thank you for helping make our team better! Your answers are sent straight to the store.'}};
+function MENU(){return MENUS[L.role]||null}
 var SS_LEGEND='= non-compliant on an October Smart Shop (Tue = Tuesday dinner, Fri = Friday afternoon).';
 var APP='TigerTown Evaluations';
 function EV(t){return EVALS[t]||EVALS.ipos}
@@ -157,7 +161,7 @@ function who(s){var e=EV(s.type);if(e.anon)return 'Secret shopper'+(s.member?' �
 
 /* ===== Storage (this device) ===== */
 var KEY='ipos_eval_v1',L={sheets:{},cur:null,mine:{},dirty:{},dels:{},key:'',sid:'',spw:'',mpw:'',lastSync:0},storeOk=true;
-function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.spw=str(p.spw,200);L.mpw=str(p.mpw,200);L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
+function lload(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);Object.keys(obj(p.sheets)).forEach(function(k){L.sheets[k]=norm(k,p.sheets[k])});L.cur=p.cur||null;L.mine=obj(p.mine);L.dirty=obj(p.dirty);L.dels=obj(p.dels);L.key=str(p.key,200);L.sid=str(p.sid,200);L.spw=str(p.spw,200);L.mpw=str(p.mpw,200);L.role=MENUS[p.role]?p.role:'';L.lastSync=+p.lastSync||0}}catch(e){storeOk=false}}
 function lsave(){try{localStorage.setItem(KEY,JSON.stringify(L));if(!storeOk){storeOk=true;setStatus()}}catch(e){storeOk=false;setStatus()}}
 function setStatus(){var el=$('status'),n=Object.keys(L.sheets).filter(function(k){return answered(L.sheets[k])}).length;
   if(!storeOk){el.className='status warn';el.innerHTML='<b>Not saving</b> · this browser is blocking storage. Open the app from the Home Screen icon.';return}
@@ -174,10 +178,16 @@ try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}
 var sh=null,view='home';
 function all(){return Object.keys(L.sheets).map(function(k){return L.sheets[k]})}
 function mine(){return Object.keys(L.sheets).filter(function(k){return L.mine[k]&&L.sheets[k]}).map(function(k){return L.sheets[k]})}
-function renderHome(){
-  $('pickers').innerHTML=ORDER.map(function(t,i){var e=EVALS[t];return'<button data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
-  $('relock').hidden=!L.spw;
-  var M=mine().filter(function(s){return !s.submitted&&(answered(s)||s.member||s.gen)}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
+var SUB0='';
+function applyRole(){var M=MENU();if(!SUB0)SUB0=$('subline').innerHTML;
+  $('subline').innerHTML=(M&&M.sub)?esc(M.sub):SUB0;
+  $('t_mgr').hidden=!(M&&M.mgr);$('tabs').hidden=!(M&&M.mgr);
+  $('rolecard').hidden=!!M;$('evalcard').hidden=!M;
+  if(M){$('menutitle').textContent=M.title;$('switchrole').textContent=M.sw}}
+function renderHome(){applyRole();var MN=MENU();if(!MN){$('recentcard').hidden=true;$('lockcard').hidden=true;return}
+  $('pickers').innerHTML=MN.evals.map(function(t,i){var e=EVALS[t];return'<button data-new="'+t+'"><b>'+(e.locked?(L.spw?'🔓 ':'🔒 '):'')+esc(e.t)+'</b><span>'+esc(e.d)+'</span></button>'}).join('');
+  $('relock').hidden=!L.spw||MN.evals.indexOf('shop')<0;
+  var M=mine().filter(function(s){return !s.submitted&&MN.evals.indexOf(s.type)>=0&&(answered(s)||s.member||s.gen)}).sort(function(a,b){return b.updated-a.updated}).slice(0,15);
   $('recentcard').hidden=!M.length;
   $('recent').innerHTML=M.map(function(s){var r=score(s);return'<button data-open="'+esc(s.id)+'"><b>'+esc(EV(s.type).short)+'</b> · '+esc(who(s))+'<small>'+esc(fmtDate(s.date)+' · '+s.part+' · '+(r.pct==null?'not scored yet':r.pct+'%'))+'</small></button>'}).join('')}
 $('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(!b)return;var t=b.dataset.new;
@@ -473,7 +483,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden)pull
 setInterval(function(){if(!document.hidden)pull()},60000);
 
 /* ===== Views ===== */
-function go(v){view=v;var m=v==='manager';
+function go(v){if(v==='manager'&&!(MENU()&&MENU().mgr))v='home';view=v;var m=v==='manager';
   $('v_home').hidden=v!=='home';$('v_sheet').hidden=v!=='sheet';$('v_mgr').hidden=!m;
   $('t_eval').classList.toggle('on',!m);$('t_mgr').classList.toggle('on',m);
   if(v==='home')renderHome();
@@ -484,6 +494,8 @@ $('t_eval').onclick=function(){location.hash='evaluate';go('home')};
 $('t_mgr').onclick=function(){location.hash='manager';go('manager')};
 window.addEventListener('hashchange',function(){takeKeyFromUrl();if(location.hash==='#manager')go('manager');else if(view==='manager')go('home')});
 
+$('roles').addEventListener('click',function(e){var b=e.target.closest('button[data-role]');if(!b)return;L.role=b.dataset.role;lsave();go('home')});
+$('switchrole').onclick=function(){L.role=L.role==='shop'?'lead':'shop';$('lockcard').hidden=true;lsave();if(location.hash)history.replaceState(null,'',location.pathname+location.search);go('home')};
 /* ===== Start ===== */
 lload();takeKeyFromUrl();
 /* drop empty sheets left over from older versions */
