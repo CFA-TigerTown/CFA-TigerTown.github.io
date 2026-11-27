@@ -158,6 +158,9 @@ body.shop h2 small{display:none}
 body.shop .item .tag,body.shop .item .meta{display:none}
 body.shop #sections h2{display:none}
 body.shop #sections{margin-top:16px}
+#inprow{margin:0 0 14px;background:var(--card)}
+body.shop #inprow{border:2px solid var(--accent);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(60,25,15,.06),0 6px 18px rgba(60,25,15,.06)}
+body.shop #inprow.need{border-color:var(--bad);background:var(--badbg)}
 </style>
 </head>
 <body>
@@ -194,7 +197,7 @@ body.shop #sections{margin-top:16px}
 </div>
 <div class="card" id="guidecard" hidden>
   <h3>Before you start: how to be a great secret shopper</h3>
-  <ol class="guide" id="guidelist"><li><b>Know what to look for.</b> Tap the button below and read the questions <i>before</i> you order. Your answers save on this phone, so you can fill them in after your visit.</li><li><b>Order in person.</b> Order with an outside order taker in the drive-thru. Do not order in the Chick-fil-A app.</li><li><b>Act like a normal guest.</b> Do not tell the team that you are a secret shopper.</li><li><b>Get the name.</b> Read the name tag of the team member who takes your order. You need it to submit.</li><li><b>Scan your app with your order taker.</b> Scan your Chick-fil-A One app when they ask, or before you pay, so we know where to send your reward.</li><li><b>Keep your receipt.</b> You will enter the transaction number from it.</li><li><b>Fill it out as soon as you can.</b> Best: start while you wait in line. Your receipt with the transaction number comes with your order. Add a note for anything that was missed.</li><li><b>Submit when you are done.</b> Tap <b>Submit to store</b> 2 times. After that, the evaluation can’t be changed.</li></ol>
+  <ol class="guide" id="guidelist"><li><b>Know what to look for.</b> Tap the button below and read the questions <i>before</i> you order. Your answers save on this phone, so you can fill them in after your visit.</li><li><b>Order in person in the drive-thru only.</b> Order with an outside order taker in the drive-thru. Do not order in the Chick-fil-A app, and do not order inside for dine-in or carry-out.</li><li><b>Act like a normal guest.</b> Do not tell the team that you are a secret shopper.</li><li><b>Get the name.</b> Read the name tag of the team member who takes your order. You need it to submit.</li><li><b>Scan your app with your order taker.</b> Scan your Chick-fil-A One app when they ask, or before you pay, so we know where to send your reward.</li><li><b>Keep your receipt.</b> You will enter the transaction number from it.</li><li><b>Fill it out as soon as you can.</b> Best: start while you wait in line. Your receipt with the transaction number comes with your order. Add a note for anything that was missed.</li><li><b>Submit when you are done.</b> Tap <b>Submit to store</b> 2 times. After that, the evaluation can’t be changed.</li></ol>
   <div class="row"><button class="primary" id="guide_go">I’m ready. Start my evaluation</button><button id="guide_cancel">Not now</button></div>
 </div>
 <div class="card" id="recentcard">
@@ -232,11 +235,11 @@ body.shop #sections{margin-top:16px}
 <div class="card" id="subcard" hidden>
   <div id="substate"></div>
 </div>
+<label class="chk" id="inprow" hidden><input type="checkbox" id="f_inperson"><span><b>I confirm:</b><br>• I placed this order <b>in person with an outside order taker in the drive-thru</b>. Not in the Chick-fil-A app, and not inside for dine-in or carry-out.<br>• I <b>scanned my Chick-fil-A One app</b> with the order taker. <small>(If you do not scan your app, you may not get your reward for this visit.)</small><br><small>(required)</small></span></label>
 <div id="sections"></div>
 
 <div class="card">
-  <label class="chk" id="inprow" hidden style="margin-bottom:12px"><input type="checkbox" id="f_inperson"><span>I placed this order <b>in person with an outside order taker in the drive-thru</b>, not in the Chick-fil-A app. <small>(required)</small></span></label>
-  <label id="txnrow" hidden style="margin-bottom:12px">Receipt transaction number<input id="f_txn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Printed on your receipt"></label>
+    <label id="txnrow" hidden style="margin-bottom:12px">Receipt transaction number<input id="f_txn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Printed on your receipt"></label>
   <label>Overall comments<textarea id="f_gen" placeholder="Anything else to coach on…"></textarea></label>
   <div class="actions" style="margin-top:12px">
     <button class="primary" id="submit" hidden>Submit to store</button>
