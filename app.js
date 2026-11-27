@@ -152,7 +152,7 @@ function norm(id,d){d=obj(d);var a={},n={},A=obj(d.a),N=obj(d.n);
   Object.keys(A).forEach(function(k){if(A[k]==='y'||A[k]==='n'||A[k]==='na')a[k]=A[k]});
   Object.keys(N).forEach(function(k){var v=str(N[k],2000);if(v)n[k]=v});
   var type=EVALS[d.type]?d.type:'ipos';
-  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),txn:str(d.txn,60),a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
+  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),txn:str(d.txn,60),inperson:d.inperson?1:0,a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
 function score(s){var r={Y:0,N:0,sec:{}};EV(s.type).secs.forEach(function(sec){var y=0,n=0;sec.items.forEach(function(it){if(!it[2])return;var v=s.a[iid(s.type,it)];if(v==='y')y++;else if(v==='n')n++});r.sec[sec.k]={y:y,n:n};r.Y+=y;r.N+=n});r.pct=r.Y+r.N?Math.round(r.Y/(r.Y+r.N)*100):null;return r}
 function answered(s){return Object.keys(s.a).length>0}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
@@ -191,8 +191,14 @@ function renderHome(){applyRole();var MN=MENU();if(!MN){$('recentcard').hidden=t
   $('recentcard').hidden=!M.length;
   $('recent').innerHTML=M.map(function(s){var r=score(s);return'<button data-open="'+esc(s.id)+'"><b>'+esc(EV(s.type).short)+'</b> · '+esc(who(s))+'<small>'+esc(fmtDate(s.date)+' · '+s.part+' · '+(r.pct==null?'not scored yet':r.pct+'%'))+'</small></button>'}).join('')}
 $('pickers').addEventListener('click',function(e){var b=e.target.closest('button[data-new]');if(!b)return;var t=b.dataset.new;
+  $('guidecard').hidden=true;
   if(EV(t).locked&&!L.spw){$('lockcard').hidden=false;$('pw_err').textContent='';$('pw_in').value='';$('pw_in').focus();$('lockcard').scrollIntoView({block:'center'});return}
+  if(t==='shop'){showGuide();return}
   add(t)});
+/* Secret shopper guide: a last reminder before each evaluation */
+function showGuide(){$('lockcard').hidden=true;$('guidecard').hidden=false;$('guidecard').scrollIntoView({block:'start',behavior:'smooth'})}
+$('guide_go').onclick=function(){$('guidecard').hidden=true;add('shop')};
+$('guide_cancel').onclick=function(){$('guidecard').hidden=true};
 /* Password check: time limit, one retry, never stuck on "Checking". */
 function pwCheck(q,errEl,btn,onOk){var tries=0,done=false,slow;
   function fin(){done=true;clearTimeout(slow);btn.disabled=false}
@@ -206,7 +212,7 @@ $('pw_go').onclick=function(){var pw=$('pw_in').value.trim();if(!pw)return;
   if(!syncOn()){$('pw_err').textContent='This device isn’t connected. Open the pinned GroupMe link first.';return}
   if(navigator.onLine===false){$('pw_err').textContent='You need to be online to unlock.';return}
   pwCheck('action=spw&pw='+encodeURIComponent(pw),$('pw_err'),this,function(r){if(!(r&&r.ok&&r.shop))return false;
-    L.spw=pw;lsave();$('lockcard').hidden=true;$('pw_in').value='';add('shop');return true})};
+    L.spw=pw;lsave();$('lockcard').hidden=true;$('pw_in').value='';renderHome();showGuide();return true})};
 $('pw_in').addEventListener('keydown',function(e){if(e.key==='Enter')$('pw_go').click()});
 $('pw_cancel').onclick=function(){$('lockcard').hidden=true};
 $('relock').onclick=function(){if(Object.keys(L.dirty).some(function(k){return L.sheets[k]&&L.sheets[k].type==='shop'})){toast('Wait until your Secret Shopper sheet has synced, then lock.');return}
@@ -215,12 +221,12 @@ $('recent').addEventListener('click',function(e){var b=e.target.closest('button[
 $('back').onclick=function(){go('home')};
 
 /* ===== Sheet view ===== */
-function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:EV(type).anon?'Secret shopper':(last.by||''),rest:last.rest||'',date:today(),part:partNow(),gen:'',txn:'',a:{},n:{},created:t,updated:t}}
+function blank(type){var last=mine().sort(function(a,b){return b.updated-a.updated})[0]||{};var t=Date.now();return{id:newId(),type:type,member:'',by:EV(type).anon?'Secret shopper':(last.by||''),rest:last.rest||'',date:today(),part:partNow(),gen:'',txn:'',inperson:0,a:{},n:{},created:t,updated:t}}
 function lists(){var m={},e={};all().forEach(function(s){if(s.member)m[s.member.trim()]=1;if(s.by)e[s.by.trim()]=1});
   $('memberlist').innerHTML=Object.keys(m).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('');
   $('evallist').innerHTML=Object.keys(e).sort().map(function(x){return'<option value="'+esc(x)+'">'}).join('')}
 function renderFields(){var e=EV(sh.type);renderSubmit();$('evtitle').textContent=e.t;$('memberrow').hidden=!e.person;$('byrow').hidden=!!e.anon;$('memberlbl').firstChild.textContent=e.anon?'Team member (from name tag, required)':'Team member being evaluated';
-  $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('f_txn').value=sh.txn||'';$('txnrow').hidden=sh.type!=='shop';$('out').hidden=true;needName();lists()}
+  $('f_member').value=sh.member;$('f_by').value=sh.by;$('f_date').value=sh.date;$('f_part').value=sh.part;$('f_gen').value=sh.gen;$('f_txn').value=sh.txn||'';$('txnrow').hidden=sh.type!=='shop';$('inprow').hidden=sh.type!=='shop';$('f_inperson').checked=!!sh.inperson;$('inprow').classList.remove('need');$('out').hidden=true;needName();lists()}
 function needName(){var e=EV(sh.type);$('f_member').classList.toggle('need',e.person&&!e.anon&&!sh.member.trim());$('f_by').classList.toggle('need',!e.anon&&!sh.by.trim());
   if(e.anon){$('barwho').textContent='Secret shopper · '+(sh.member.trim()?sh.member+' · ':'')+sh.part;return}
   $('barwho').textContent=e.person?(sh.member.trim()?sh.member+' · '+sh.part:'Enter the team member’s name'):(sh.by.trim()?e.short+' · '+sh.part:'Enter your name')}
@@ -243,7 +249,7 @@ function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[
 function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
   e.secs.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
     sec.items.forEach(function(it){var id=iid(s.type,it);if(s.a[id]==='n')t+='  ✗ '+it[0]+' '+it[1]+(it[2]?'':' (unscored)')+' – '+it[3]+(s.n[id]?' | Note: '+s.n[id]:'')+'\n'})});
-  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.type==='shop')t+='\nReceipt transaction #: '+(s.txn||'(not given)')+'\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
+  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.type==='shop')t+='\nReceipt transaction #: '+(s.txn||'(not given)')+'\nOrdered in person at the drive-thru: '+(s.inperson?'Yes':'Not confirmed')+'\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
 
 var armed=false,dtm;
 function rst(){armed=false;clearTimeout(dtm);$('del').classList.remove('armed');$('del').textContent='Delete sheet'}
@@ -251,6 +257,7 @@ $('del').onclick=function(){if(sh&&sh.submitted){toast('Submitted sheets can’t
   rst();var did=sh.id;delete L.sheets[did];delete L.mine[did];delete L.dirty[did];if(syncOn())L.dels[did]=1;L.cur=null;sh=null;lsave();queueSync();setStatus();go('home');toast('Sheet deleted.')};
 [['f_member','member'],['f_by','by'],['f_date','date'],['f_part','part'],['f_gen','gen'],['f_txn','txn']].forEach(function(p){
   $(p[0]).addEventListener(p[0]==='f_part'?'change':'input',function(){if(sh.submitted){this.value=sh[p[1]]||'';touch();return}sh[p[1]]=this.value;touch();if(p[1]==='txn')this.classList.remove('need');else if(p[1]!=='gen')needName()})});
+$('f_inperson').addEventListener('change',function(){if(sh.submitted){this.checked=!!sh.inperson;touch();return}sh.inperson=this.checked?1:0;$('inprow').classList.remove('need');touch()});
 $('sections').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(!b||sh.submitted)return;
   var row=b.closest('.item'),id=row.dataset.id,v=b.dataset.v;if(sh.a[id]===v)v='';
   if(v)sh.a[id]=v;else delete sh.a[id];touch();
@@ -266,13 +273,15 @@ $('reset').onclick=function(){var b=this;if(!clr){clr=true;b.textContent='Tap ag
 /* ===== Secret Shopper submit ===== */
 function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
   $('submit').hidden=!shop||done;subArmed=false;$('pdf1').textContent=(shop||done)?'Save PDF copy':'Submit';$('subcard').hidden=!shop&&!done;$('v_sheet').classList.toggle('locked',done);
-  $('del').hidden=done;$('reset').hidden=done;['f_member','f_by','f_date','f_part','f_gen','f_txn'].forEach(function(k){$(k).disabled=done});
+  $('del').hidden=done;$('reset').hidden=done;['f_member','f_by','f_date','f_part','f_gen','f_txn','f_inperson'].forEach(function(k){$(k).disabled=done});
   if(!shop&&done)$('substate').innerHTML='<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> This sheet is final.';
-  if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'}
+  var tipsHtml=shop&&!done?'<details class="tips"><summary>Secret shopper tips</summary><ol class="guide">'+$('guidelist').innerHTML+'</ol></details>':'';
+  if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'+tipsHtml}
 var subArmed=false;
 $('submit').onclick=function(){var b=this;
   if(!answered(sh)){toast('Answer the items first.');return}
   if(!sh.member.trim()){var fm=$('f_member');fm.classList.add('need');fm.scrollIntoView({block:'center'});fm.focus();toast('Enter the team member’s name first. Look at their name tag.');return}
+  if(!sh.inperson){var ip=$('inprow');ip.classList.add('need');ip.scrollIntoView({block:'center'});toast('Check the box to confirm you ordered in person at the drive-thru.');return}
   if(!syncOn()||!L.spw){toast('Connect and unlock Secret Shopper first.');return}
   var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
   if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
@@ -282,7 +291,7 @@ function shopHtml(s){var e=EV(s.type),r=score(s),H=function(x){return esc(String
   var h='<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;margin:24px}h1{background:#1e4e8c;color:#fff;font-size:18px;padding:12px 14px;margin:0 0 14px}'+
   'table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #ccd;padding:5px;vertical-align:top;text-align:left}th{background:#1e4e8c;color:#fff}.y{color:#1f7a4d;background:#dff3e7;font-weight:bold;text-align:center}.n{color:#b3203a;background:#fbe3e8;font-weight:bold;text-align:center}.c{text-align:center}.sec td{background:#e5e9ee;font-weight:bold}.kv td{border:none;padding:2px 14px 6px 0}.kv b{font-size:13px}</style></head><body>';
   h+='<h1>'+H(e.t)+' Evaluation</h1><table class="kv"><tr><td>Team member<br><b>'+H(s.member||'(not given)')+'</b></td><td>Date<br><b>'+H(dayName(s.date)+' '+fmtDate(s.date))+'</b></td><td>Day part<br><b>'+H(s.part)+'</b></td><td>Receipt transaction #<br><b>'+H(s.txn||'(not given)')+'</b></td></tr>'+
-  '<tr><td>Score<br><b>'+(r.pct==null?'-':r.pct+'%')+'</b></td><td>Compliant<br><b>'+r.Y+'</b></td><td>Non-compliant<br><b>'+r.N+'</b></td><td></td></tr></table><br>';
+  '<tr><td>Score<br><b>'+(r.pct==null?'-':r.pct+'%')+'</b></td><td>Compliant<br><b>'+r.Y+'</b></td><td>Non-compliant<br><b>'+r.N+'</b></td><td>Ordered in person<br><b>'+(s.inperson?'Yes':'Not confirmed')+'</b></td></tr></table><br>';
   h+='<table><tr><th style="width:60px">ID</th><th>Standard</th><th style="width:50px">Result</th><th>Details</th></tr>';
   e.secs.forEach(function(sec){if(e.secs.length>1)h+='<tr class="sec"><td colspan="4">'+H(sec.t)+'</td></tr>';
     sec.items.forEach(function(it){var id=iid(s.type,it),v=s.a[id],a=ans(v)||'-';h+='<tr><td>'+H(it[0])+'</td><td>'+H(it[1])+(it[2]?'':' (unscored)')+'</td><td class="'+(v==='y'?'y':v==='n'?'n':'c')+'">'+a+'</td><td>'+(v==='n'?H(it[3])+(s.n[id]?'<br>':''):'')+(s.n[id]?'Note: '+H(s.n[id]):'')+'</td></tr>'})});
@@ -363,9 +372,9 @@ function filterLabel(){var p=[];if(EV(mType()).person&&$('m_member').value)p.pus
 function csvCell(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function ans(v){return v==='y'?'Yes':v==='n'?'No':v==='na'?'N/A':''}
 function rowHead(type){var e=EV(type),head=['Date','Day','Day part'].concat(e.person?['Team member']:[]).concat(['Evaluator','Score %','Compliant','Non-compliant']);
-  allItems(type).forEach(function(x){head.push((e.secs.length>1?x.sec.t+' - ':'')+x.it[0]+' '+x.it[1]+(x.it[2]?'':' (unscored)')+ssTxt(x.it));head.push(x.it[0]+' note')});head.push('Comments');if(type==='shop')head.push('Transaction #');return head}
+  allItems(type).forEach(function(x){head.push((e.secs.length>1?x.sec.t+' - ':'')+x.it[0]+' '+x.it[1]+(x.it[2]?'':' (unscored)')+ssTxt(x.it));head.push(x.it[0]+' note')});head.push('Comments');if(type==='shop')head.push('Transaction #','In person');return head}
 function rowOf(s){var e=EV(s.type),r=score(s),row=[s.date,dayName(s.date),s.part].concat(e.person?[s.member]:[]).concat([s.by,r.pct==null?'':r.pct,r.Y,r.N]);
-  allItems(s.type).forEach(function(x){row.push(ans(s.a[x.id]));row.push(s.n[x.id]||'')});row.push(s.gen);if(s.type==='shop')row.push(s.txn||'');return row}
+  allItems(s.type).forEach(function(x){row.push(ans(s.a[x.id]));row.push(s.n[x.id]||'')});row.push(s.gen);if(s.type==='shop')row.push(s.txn||'',s.inperson?'Yes':'');return row}
 $('x_csv').onclick=function(){var E=filtered();if(!E.length)return;var t=mType();
   var rows=[rowHead(t)];E.slice().reverse().forEach(function(s){rows.push(rowOf(s))});
   var txt='﻿'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n');
@@ -441,7 +450,7 @@ function syncUrl(){var c=String(window.IPOS_SYNC_URL||'').trim();return c||(L.si
 function syncOn(){SYNC_URL=syncUrl();return !!(SYNC_URL&&L.key)}
 function readKey(v){v=String(v||'').trim();var m=v.match(/[?&#]k=([A-Za-z0-9_-]+)/);return m?m[1]:(/^[A-Za-z0-9_-]{6,}$/.test(v)?v:'')}
 function readSid(v){var m=String(v||'').match(/[?&#]s=([A-Za-z0-9_-]{20,})/)||String(v||'').match(/macros\/s\/([A-Za-z0-9_-]{20,})/);return m?m[1]:''}
-function takeKeyFromUrl(){var k=readKey(location.search)||readKey(location.hash),d=readSid(location.search)||readSid(location.hash);if(d&&d!==L.sid){L.sid=d;syncErr='';lsave()}if(k&&k!==L.key){L.key=k;syncErr='';lsave()}}
+function takeKeyFromUrl(){var rm=(location.search+location.hash).match(/[?&#]as=(shop|lead)\b/);if(rm&&MENUS[rm[1]]&&L.role!==rm[1]){L.role=rm[1];lsave()}var k=readKey(location.search)||readKey(location.hash),d=readSid(location.search)||readSid(location.hash);if(d&&d!==L.sid){L.sid=d;syncErr='';lsave()}if(k&&k!==L.key){L.key=k;syncErr='';lsave()}}
 function queueSync(){if(!syncOn())return;clearTimeout(stimer);stimer=setTimeout(push,1200)}
 function api(method,body){
   if(method==='GET')return fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'k='+encodeURIComponent(L.key)+(L.mpw?'&mp='+encodeURIComponent(L.mpw):'')+'&t='+Date.now(),{cache:'no-store',redirect:'follow'}).then(function(r){return r.json()});
