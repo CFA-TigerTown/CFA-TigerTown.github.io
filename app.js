@@ -480,7 +480,7 @@ function api(method,body){
 var TABS={ipos:'IPOS',co:'Carry Out & Facilities',boh:'Back of House',shop:'Secret Shopper'};
 function keep(s){return s&&(answered(s)||s.member||s.gen)}
 function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=Object.keys(L.dels);if(!ids.length&&!dels.length)return;
-  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k],o={id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)};return o});
+  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k],o={id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)};if(s.type==='shop'&&s.submitted){var sc=score(s);o.alert=dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+' · '+(s.member||'(no name)')+' · '+(sc.pct==null?'–':sc.pct+'%')+' · Transaction #'+(s.txn||'(not given)')}return o});
   ids.forEach(function(k){if(!keep(L.sheets[k]))delete L.dirty[k]});
   if(!put.length&&!dels.length){lsave();setStatus();return}
   var sent={};put.forEach(function(x){sent[x.id]=x.updated});
