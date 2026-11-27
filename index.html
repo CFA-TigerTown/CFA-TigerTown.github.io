@@ -102,12 +102,66 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 .back{background:transparent;border:0;color:var(--accent);font-weight:600;padding:0 4px;min-height:40px}
 .locked .opts button,.locked textarea,.locked input,.locked select{pointer-events:none;opacity:.7}
 .evtitle{font-size:20px;font-weight:700;margin:2px 4px 10px}
+
+/* Secret Shopper look: Chick-fil-A colors. Only when body has class "shop". */
+body.shop{--bg:#f8f4ee;--card:#fff;--text:#2a1d18;--muted:#6b5d55;--line:#eadfd3;--accent:#c8102e;--accentfg:#fff;--bad:#b3203a;--badbg:#fbe6ea;--ok:#1f7a4d;--okbg:#e2f3e8;--barbg:#efe6dc}
+@media (prefers-color-scheme:dark){body.shop{--bg:#17110f;--card:#231a17;--text:#f3ebe5;--muted:#b3a59c;--line:#3a2d28;--accent:#ff6f80;--accentfg:#2a0910;--badbg:#45202a;--okbg:#17382a;--barbg:#3a2d28}}
+body.shop main{padding-top:0}
+body.shop h1,body.shop #subline{display:none}
+.ssbrand{display:none}
+body.shop.onhome .ssbrand{display:block}
+.ssbrand{position:relative;overflow:hidden;background:#c8102e;color:#fff;margin:0 -14px 14px;padding:26px 22px 24px;border-radius:0 0 28px 28px}
+.ssbrand::after{content:"";position:absolute;right:-60px;top:-70px;width:220px;height:220px;border-radius:50%;background:#fff;opacity:.08}
+.ssbrand::before{content:"";position:absolute;right:40px;bottom:-90px;width:160px;height:160px;border-radius:50%;background:#fff;opacity:.06}
+.ss-eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.92}
+.ss-title{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:6px 0 8px}
+.ss-sub{font-size:15px;line-height:1.4;max-width:34em;opacity:.95}
+body.shop .status{margin:0 4px 12px}
+body.shop .card,body.shop .item,body.shop .bar{border:0;border-radius:18px;box-shadow:0 1px 2px rgba(60,25,15,.06),0 6px 18px rgba(60,25,15,.06)}
+@media (prefers-color-scheme:dark){body.shop .card,body.shop .item,body.shop .bar{box-shadow:0 1px 0 rgba(255,255,255,.04)}}
+body.shop .card{padding:18px}
+body.shop h3{font-size:19px;font-weight:800;letter-spacing:-.01em}
+body.shop #pickers button{background:var(--accent);color:var(--accentfg);border:0;border-radius:16px;min-height:92px;box-shadow:0 6px 16px rgba(200,16,46,.22)}
+body.shop #pickers button span{color:inherit;opacity:.9}
+body.shop .back{color:var(--accent)}
+body.shop input,body.shop select,body.shop textarea{background:var(--card);border:1.5px solid var(--line);border-radius:12px}
+body.shop input:focus,body.shop select:focus,body.shop textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,16,46,.15)}
+body.shop button{border-radius:12px}
+body.shop button.primary{border-radius:999px;font-weight:700;padding:0 22px;box-shadow:0 4px 12px rgba(200,16,46,.2)}
+body.shop #guidecard h3{margin-bottom:4px}
+body.shop ol.guide{list-style:none;padding:0;margin:12px 0 16px;counter-reset:g}
+body.shop ol.guide li{counter-increment:g;position:relative;padding:2px 0 0 44px;margin:0 0 14px;min-height:30px;font-size:15px}
+body.shop ol.guide li::before{content:counter(g);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accentfg);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+body.shop ol.guide b{color:var(--text)}
+body.shop .tips summary{color:var(--accent)}
+body.shop .evtitle{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:4px 4px 12px}
+body.shop .bar{padding:12px 16px}
+body.shop .pct{color:var(--accent);font-weight:800}
+body.shop h2{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:26px 6px 10px}
+body.shop h2 small{text-transform:none;letter-spacing:0;font-weight:500}
+body.shop .item{border-left:0;padding:16px}
+body.shop .q{font-weight:600;font-size:16px}
+body.shop .opts{gap:10px}
+body.shop .opts button{border-radius:12px;border:1.5px solid var(--line);background:var(--card)}
+body.shop label.chk{border:1.5px solid var(--line);border-radius:14px;padding:14px;font-size:15px;color:var(--text)}
+body.shop label.chk input{accent-color:#c8102e}
+body.shop label.chk.need{border-color:var(--bad);background:var(--badbg)}
+body.shop #submit{width:100%;min-height:56px;font-size:18px}
+body.shop .recent button{border:1.5px solid var(--line);border-radius:14px;background:var(--card)}
+body.shop .bar{flex-wrap:nowrap;gap:14px;padding:12px 16px 20px}
+body.shop .bar::after{content:"";position:absolute;left:16px;right:16px;bottom:9px;height:5px;border-radius:5px;background:linear-gradient(to right,var(--accent) var(--p,0%),var(--barbg) var(--p,0%))}
+body.shop .pct{font-size:26px;min-width:58px}
+body.shop .chips span:nth-child(-n+2){display:none}
+body.shop #submit:not([hidden])~#pdf1{background:var(--card);color:var(--text);border:1.5px solid var(--line);box-shadow:none;font-weight:600}
+body.shop .bar>div:first-child{display:none}
+body.shop h2 small{display:none}
 </style>
 </head>
 <body>
 <main>
 <h1>TigerTown Evaluations</h1>
 <p class="sub" id="subline">IPOS, Carry Out &amp; Facilities, Back of House and Secret Shopper checks from Smart Shop. Works offline and syncs to the shared sheet.</p>
+<header class="ssbrand"><div class="ss-eyebrow">Chick-fil-A TigerTown</div><div class="ss-title">Secret Shopper</div><div class="ss-sub">Your honest answers go straight to the store and help our team grow.</div></header>
 <p class="status" id="status"></p>
 
 <div class="tabs" role="tablist" id="tabs">
@@ -137,7 +191,7 @@ tr.det ul{margin:4px 0 0;padding-left:18px}
 </div>
 <div class="card" id="guidecard" hidden>
   <h3>Before you start: how to be a great secret shopper</h3>
-  <ol class="guide" id="guidelist"><li><b>Know what to look for.</b> Tap the button below and read the questions <i>before</i> you order. Your answers save on this phone, so you can fill them in after your visit.</li><li><b>Order in person.</b> Order with an outside order taker in the drive-thru. Do not order in the Chick-fil-A app.</li><li><b>Act like a normal guest.</b> Do not tell the team that you are a secret shopper.</li><li><b>Get the name.</b> Read the name tag of the team member who takes your order. You need it to submit.</li><li><b>Scan your app with your order taker.</b> Scan your Chick-fil-A One app when they ask, or before you pay, so we know where to send your reward.</li><li><b>Keep your receipt.</b> You will enter the transaction number from it.</li><li><b>Fill it out as soon as you can.</b> Best: while you wait in line, before you get your food. Do not type while the car is moving. Add a note for anything that was missed.</li><li><b>Submit when you are done.</b> Tap <b>Submit to store</b> 2 times. After that, the evaluation can’t be changed.</li></ol>
+  <ol class="guide" id="guidelist"><li><b>Know what to look for.</b> Tap the button below and read the questions <i>before</i> you order. Your answers save on this phone, so you can fill them in after your visit.</li><li><b>Order in person.</b> Order with an outside order taker in the drive-thru. Do not order in the Chick-fil-A app.</li><li><b>Act like a normal guest.</b> Do not tell the team that you are a secret shopper.</li><li><b>Get the name.</b> Read the name tag of the team member who takes your order. You need it to submit.</li><li><b>Scan your app with your order taker.</b> Scan your Chick-fil-A One app when they ask, or before you pay, so we know where to send your reward.</li><li><b>Keep your receipt.</b> You will enter the transaction number from it.</li><li><b>Fill it out as soon as you can.</b> Best: while you wait in line, before you get your food. Add a note for anything that was missed.</li><li><b>Submit when you are done.</b> Tap <b>Submit to store</b> 2 times. After that, the evaluation can’t be changed.</li></ol>
   <div class="row"><button class="primary" id="guide_go">I’m ready. Start my evaluation</button><button id="guide_cancel">Not now</button></div>
 </div>
 <div class="card" id="recentcard">
