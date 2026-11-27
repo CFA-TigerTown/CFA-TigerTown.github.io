@@ -161,6 +161,9 @@ body.shop #sections{margin-top:16px}
 #inprow{margin:0 0 14px;background:var(--card)}
 body.shop #inprow{border:2px solid var(--accent);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(60,25,15,.06),0 6px 18px rgba(60,25,15,.06)}
 body.shop #inprow.need{border-color:var(--bad);background:var(--badbg)}
+body.shop .item .note[hidden]{display:block!important}
+body.shop .item .note textarea{min-height:46px;font-size:15px}
+.vitem{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -261,6 +264,11 @@ body.shop #inprow.need{border-color:var(--bad);background:var(--badbg)}
   <p class="small" id="mp_err" style="color:var(--bad)"></p>
 </div>
 <div id="mgrbody">
+<div class="card" id="vercard" hidden>
+  <h3>Secret shoppers to verify <small style="color:var(--muted);font-weight:500" id="vercount"></small></h3>
+  <p class="small" style="margin:0 0 10px">Check the order (transaction #, drive-thru, app scan). The store gets the email only after you tap <b>Verify and send</b>.</p>
+  <div id="verlist"></div>
+</div>
 <div class="card" id="keycard" hidden>
   <h3>Connect to the shared sheet</h3>
   <p class="small" style="margin:0 0 10px">This device isn’t connected, so it only shows its own evaluations. Open the pinned GroupMe link, or paste it here.</p>
