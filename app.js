@@ -152,7 +152,8 @@ function norm(id,d){d=obj(d);var a={},n={},A=obj(d.a),N=obj(d.n);
   Object.keys(A).forEach(function(k){if(A[k]==='y'||A[k]==='n'||A[k]==='na')a[k]=A[k]});
   Object.keys(N).forEach(function(k){var v=str(N[k],2000);if(v)n[k]=v});
   var type=EVALS[d.type]?d.type:'ipos';
-  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),txn:str(d.txn,60),inperson:d.inperson?1:0,a:a,n:n,submitted:+d.submitted||0,created:+d.created||0,updated:+d.updated||0}}
+  return{id:id,type:type,member:str(d.member,120),by:str(d.by,120),rest:str(d.rest,120),date:str(d.date,10),part:str(d.part,20)||'Lunch',gen:str(d.gen,4000),txn:str(d.txn,60),inperson:d.inperson?1:0,a:a,n:n,submitted:+d.submitted||0,review:rvw(d.review),mailed:d.mailed?1:0,created:+d.created||0,updated:+d.updated||0}}
+function rvw(r){r=obj(r);return(r.st==='ok'||r.st==='no')?{st:r.st,at:+r.at||0,note:str(r.note,300)}:null}
 function score(s){var r={Y:0,N:0,sec:{}};EV(s.type).secs.forEach(function(sec){var y=0,n=0;sec.items.forEach(function(it){if(!it[2])return;var v=s.a[iid(s.type,it)];if(v==='y')y++;else if(v==='n')n++});r.sec[sec.k]={y:y,n:n};r.Y+=y;r.N+=n});r.pct=r.Y+r.N?Math.round(r.Y/(r.Y+r.N)*100):null;return r}
 function answered(s){return Object.keys(s.a).length>0}
 function toast(t){var d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2600)}
@@ -237,7 +238,7 @@ function renderItems(){var h='',T=sh.type;
       h+='<div class="item '+v+'" data-id="'+esc(id)+'"><div class="q">'+esc(it[1])+(it[2]?'':'<span class="tag">Unscored</span>')+ssTag(it)+'</div><div class="meta">'+esc(it[0])+'</div>'+
       '<div class="opts">'+[['y','Yes'],['n','No'],['na','N/A']].map(function(o){return'<button class="'+o[0]+(v===o[0]?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
       '<div class="hint"'+(v==='n'?'':' hidden')+'>If No: '+esc(it[3])+'</div>'+
-      '<div class="note"'+(v==='n'||sh.n[id]?'':' hidden')+'><textarea placeholder="Notes (optional)" data-note="'+esc(id)+'">'+esc(sh.n[id]||'')+'</textarea></div></div>'})});
+      '<div class="note"'+(v==='n'||sh.n[id]?'':' hidden')+'><textarea placeholder="'+(T==='shop'?'Comment (optional)':'Notes (optional)')+'" data-note="'+esc(id)+'">'+esc(sh.n[id]||'')+'</textarea></div></div>'})});
   $('sections').innerHTML=h;scores()}
 function scores(){var r=score(sh),tot=0,ans=0;
   EV(sh.type).secs.forEach(function(sec){var c=r.sec[sec.k];$('sc_'+sec.k).textContent=c.y+' compliant · '+c.n+' non-compliant';sec.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
@@ -276,7 +277,7 @@ function renderSubmit(){var shop=sh.type==='shop',done=!!sh.submitted;
   $('del').hidden=done;$('reset').hidden=done;['f_member','f_by','f_date','f_part','f_gen','f_txn','f_inperson'].forEach(function(k){$(k).disabled=done});
   if(!shop&&done)$('substate').innerHTML='<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> This sheet is final.';
   var tipsHtml=shop&&!done?'<details class="tips"><summary>Secret shopper tips</summary><ol class="guide">'+$('guidelist').innerHTML+'</ol></details>':'';
-  if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Sent to the store. This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. Results go to the store by email, and the sheet is then final.'+tipsHtml}
+  if(shop)$('substate').innerHTML=done?'<b style="color:var(--ok)">Submitted '+esc(new Date(sh.submitted).toLocaleString('en-US'))+'.</b> Thank you! This sheet is final.':'When you finish, tap <b>Submit to store</b> at the bottom. The sheet is then final.'+tipsHtml}
 var subArmed=false;
 $('submit').onclick=function(){var b=this;
   if(!answered(sh)){toast('Answer the items first.');return}
@@ -286,7 +287,7 @@ $('submit').onclick=function(){var b=this;
   var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
   if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
   subArmed=false;b.textContent='Submit to store';
-  sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();toast('Submitted. Sending to the store…')};
+  sh.submitted=Date.now();sh.updated=sh.submitted;L.dirty[sh.id]=1;lsave();renderSubmit();setStatus();push();toast('Submitted. Thank you!')};
 function shopHtml(s){var e=EV(s.type),r=score(s),H=function(x){return esc(String(x==null?'':x))};
   var h='<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;margin:24px}h1{background:#1e4e8c;color:#fff;font-size:18px;padding:12px 14px;margin:0 0 14px}'+
   'table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #ccd;padding:5px;vertical-align:top;text-align:left}th{background:#1e4e8c;color:#fff}.y{color:#1f7a4d;background:#dff3e7;font-weight:bold;text-align:center}.n{color:#b3203a;background:#fbe3e8;font-weight:bold;text-align:center}.c{text-align:center}.sec td{background:#e5e9ee;font-weight:bold}.kv td{border:none;padding:2px 14px 6px 0}.kv b{font-size:13px}</style></head><body>';
@@ -327,7 +328,28 @@ function stats(type,E){var e=EV(type),Y=0,N=0,sec={};e.secs.forEach(function(x){
   var st=[];allItems(type).forEach(function(x){var y=0,n=0;E.forEach(function(s){if(s.a[x.id]==='y')y++;else if(s.a[x.id]==='n')n++});if(n)st.push({it:x.it,sec:x.sec.t,n:n,d:y+n})});
   st.sort(function(a,b){return b.n/b.d-a.n/a.d||b.n-a.n});
   return{Y:Y,N:N,sec:sec,members:members,missed:st}}
-function renderMgr(){if($('v_mgr').hidden||!L.mpw)return;
+function revTxt(s){if(s.type!=='shop'||!s.submitted)return'';if(s.review&&s.review.st==='ok')return'<span style="color:var(--ok)"><b>Verified and sent</b> '+esc(new Date(s.review.at).toLocaleDateString('en-US'))+'</span>';if(s.review&&s.review.st==='no')return'<span style="color:var(--bad)"><b>Not verified</b>'+(s.review.note?': '+esc(s.review.note):'')+' (no email sent)</span>';if(s.mailed)return'<span style="color:var(--ok)"><b>Sent</b> (before review was added)</span>';return'<b style="color:var(--bad)">Waiting for your review</b>'}
+function needsRev(s){return s.type==='shop'&&s.submitted&&!s.review&&!s.mailed}
+var revArm={};
+function renderVer(){var P=all().filter(needsRev).sort(function(a,b){return a.submitted-b.submitted});$('vercard').hidden=!P.length;if(!P.length)return;
+  $('vercount').textContent='· '+P.length+' waiting';
+  $('verlist').innerHTML=P.map(function(s){var r=score(s),a=revArm[s.id]||'';
+    return'<div class="vitem"><div><b>'+esc(dayName(s.date)+' '+fmtDate(s.date))+' · '+esc(s.part)+'</b> · '+esc(s.member||'(no name)')+' · <b>'+(r.pct==null?'–':r.pct+'%')+'</b></div>'+
+    '<div class="small" style="margin:4px 0 0">Receipt transaction #: <b>'+esc(s.txn||'(not given)')+'</b> · In person in drive-thru and app scanned: <b>'+(s.inperson?'Yes':'Not confirmed')+'</b> · Submitted '+esc(new Date(s.submitted).toLocaleString('en-US'))+'</div>'+
+    (a==='no'?'<label style="margin-top:8px">Why not verified? (only you see this)<input data-note="'+esc(s.id)+'" placeholder="Example: not found in POS, ordered in the app"></label>':'')+
+    '<div class="actions" style="margin-top:10px"><button class="primary" data-vok="'+esc(s.id)+'">'+(a==='ok'?'Tap again to send to the store':'Verify and send')+'</button><button data-vno="'+esc(s.id)+'">'+(a==='no'?'Tap again: not verified':'Not verified')+'</button><button data-open="'+esc(s.id)+'">Open sheet</button></div></div>'}).join('')}
+function review(id,ok,note){var s=L.sheets[id];if(!s||!syncOn()||!L.mpw){toast('Connect and unlock Manager view first.');return}
+  var body={review:{id:id,ok:ok,note:note||''},mp:L.mpw};if(ok)body.review.mail=shopMail(s);
+  toast(ok?'Sending to the store…':'Saving…');
+  api('POST',body).then(function(r){if(!r||!r.ok){toast(r&&r.error==='need_mgr'?'Manager password needed.':'Could not save. Try again.');return}
+    s.review=rvw(r.review);if(r.updated)s.updated=+r.updated;delete revArm[id];lsave();renderMgr();
+    toast(r.already?'This one was already reviewed.':ok?'Verified. Sent to the store.':'Marked not verified. No email sent.')},function(){toast('Offline. Try again when connected.')})}
+$('verlist').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.open){if(pick(b.dataset.open)===false)return;location.hash='evaluate';go('sheet');return}
+  var id=b.dataset.vok||b.dataset.vno,k=b.dataset.vok?'ok':'no';if(!id)return;
+  if(revArm[id]!==k){revArm[id]=k;renderVer();if(k==='no'){var n=document.querySelector('[data-note="'+id+'"]');if(n)n.focus()}return}
+  var ni=document.querySelector('[data-note="'+id+'"]');review(id,k==='ok',ni?ni.value.trim():'')});
+function renderMgr(){if($('v_mgr').hidden||!L.mpw)return;renderVer();
   var t=mType(),e=EV(t),P=pool();
   $('m_memberlbl').hidden=!e.person;$('bymembercard').hidden=!e.person;
   opts($('m_by'),uniq(P.map(function(s){return s.by.trim()})),'All evaluators');
@@ -348,7 +370,7 @@ function renderMgr(){if($('v_mgr').hidden||!L.mpw)return;
   E.forEach(function(s){var r=score(s);
     h+='<tr class="ev" data-id="'+esc(s.id)+'"><td>'+esc(fmtDate(s.date))+'</td>'+(e.person?'<td>'+esc(s.member||'(no name)')+'</td>':'')+'<td>'+esc(s.part)+'</td><td class="num"><b>'+(r.pct==null?'–':r.pct+'%')+'</b><br><small style="color:var(--muted)">'+r.N+' missed</small></td><td>'+esc(s.by||'—')+'</td></tr>';
     if(open[s.id]){var f='';allItems(t).forEach(function(x){if(s.a[x.id]==='n')f+='<li><b>'+esc(x.sec.t)+':</b> '+esc(x.it[1])+(x.it[2]?'':' (unscored)')+' – '+esc(x.it[3])+(s.n[x.id]?'<br><i>Note: '+esc(s.n[x.id])+'</i>':'')+'</li>'});
-      h+='<tr class="det"><td colspan="'+cols+'">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.type==='shop'?'<p style="margin:8px 0 0"><b>Receipt transaction #:</b> '+esc(s.txn||'(not given)')+'</p>':'')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
+      h+='<tr class="det"><td colspan="'+cols+'">'+(f?'<b>Missed</b><ul>'+f+'</ul>':'No missed standards.')+(s.type==='shop'?'<p style="margin:8px 0 0"><b>Receipt transaction #:</b> '+esc(s.txn||'(not given)')+'</p>'+(revTxt(s)?'<p style="margin:8px 0 0"><b>Status:</b> '+revTxt(s)+'</p>':''):'')+(s.gen?'<p style="margin:8px 0 0"><b>Comments:</b> '+esc(s.gen)+'</p>':'')+'<div class="actions" style="margin-top:10px"><button data-open="'+esc(s.id)+'">Open sheet</button><button data-pdf="'+esc(s.id)+'">Export PDF</button></div></td></tr>'}});
   $('evtable').innerHTML=h+'</tbody></table>'}
 $('evtable').addEventListener('click',function(e){
   var o=e.target.closest('button[data-open]');if(o){if(pick(o.dataset.open)===false)return;location.hash='evaluate';go('sheet');return}
@@ -458,7 +480,7 @@ function api(method,body){
 var TABS={ipos:'IPOS',co:'Carry Out & Facilities',boh:'Back of House',shop:'Secret Shopper'};
 function keep(s){return s&&(answered(s)||s.member||s.gen)}
 function push(){if(!syncOn()||syncing)return;var ids=Object.keys(L.dirty),dels=Object.keys(L.dels);if(!ids.length&&!dels.length)return;
-  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k],o={id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)};if(s.type==='shop'&&s.submitted)o.mail=shopMail(s);return o});
+  var put=ids.filter(function(k){return keep(L.sheets[k])}).map(function(k){var s=L.sheets[k],o={id:k,tab:TABS[s.type],updated:s.updated,data:s,cols:rowOf(s)};return o});
   ids.forEach(function(k){if(!keep(L.sheets[k]))delete L.dirty[k]});
   if(!put.length&&!dels.length){lsave();setStatus();return}
   var sent={};put.forEach(function(x){sent[x.id]=x.updated});
