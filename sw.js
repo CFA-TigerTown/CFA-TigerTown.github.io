@@ -1,5 +1,5 @@
 /* Offline support. Bump VERSION after you change any file. */
-var VERSION = 'tt-evals-v20';
+var VERSION = 'tt-evals-v21';
 var SHELL = ['./', 'index.html', 'app.js', 'config.js', 'manifest.webmanifest',
   'vendor/jspdf.umd.min.js', 'vendor/jspdf.plugin.autotable.min.js',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
