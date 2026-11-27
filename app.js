@@ -249,7 +249,7 @@ function add(type){if(EV(type).locked&&!L.spw)return;var s=blank(type);L.sheets[
 function summary(s){var e=EV(s.type),r=score(s),t=e.t+' evaluation\n'+(e.person?'Team member: '+(s.member||'—')+'\n':'')+(e.anon?'Secret shopper evaluation':'Evaluator: '+(s.by||'—'))+'\n'+dayName(s.date)+' '+fmtDate(s.date)+' · '+s.part+'\n\n';
   e.secs.forEach(function(sec){var c=r.sec[sec.k];t+=sec.t+': '+c.y+' compliant, '+c.n+' non-compliant\n';
     sec.items.forEach(function(it){var id=iid(s.type,it);if(s.a[id]==='n')t+='  ✗ '+it[0]+' '+it[1]+(it[2]?'':' (unscored)')+' – '+it[3]+(s.n[id]?' | Note: '+s.n[id]:'')+'\n'})});
-  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.type==='shop')t+='\nReceipt transaction #: '+(s.txn||'(not given)')+'\nOrdered in person at the drive-thru: '+(s.inperson?'Yes':'Not confirmed')+'\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
+  t+='\nOverall: '+(r.pct==null?'–':r.pct+'%')+' ('+r.Y+' of '+(r.Y+r.N)+' scored items compliant)\n';if(s.type==='shop')t+='\nReceipt transaction #: '+(s.txn||'(not given)')+'\nOrdered in person in the drive-thru and scanned app: '+(s.inperson?'Yes':'Not confirmed')+'\n';if(s.gen)t+='\nComments: '+s.gen+'\n';return t}
 
 var armed=false,dtm;
 function rst(){armed=false;clearTimeout(dtm);$('del').classList.remove('armed');$('del').textContent='Delete sheet'}
@@ -281,7 +281,7 @@ var subArmed=false;
 $('submit').onclick=function(){var b=this;
   if(!answered(sh)){toast('Answer the items first.');return}
   if(!sh.member.trim()){var fm=$('f_member');fm.classList.add('need');fm.scrollIntoView({block:'center'});fm.focus();toast('Enter the team member’s name first. Look at their name tag.');return}
-  if(!sh.inperson){var ip=$('inprow');ip.classList.add('need');ip.scrollIntoView({block:'center'});toast('Check the box to confirm you ordered in person at the drive-thru.');return}
+  if(!sh.inperson){var ip=$('inprow');ip.classList.add('need');ip.scrollIntoView({block:'center'});toast('Check the box at the top to confirm you ordered in person in the drive-thru and scanned your app.');return}
   if(!syncOn()||!L.spw){toast('Connect and unlock Secret Shopper first.');return}
   var r=score(sh),tot=0,ans=0;EV(sh.type).secs.forEach(function(x){x.items.forEach(function(it){if(it[2]){tot++;if(sh.a[iid(sh.type,it)])ans++}})});
   if(!subArmed){subArmed=true;b.textContent=(ans<tot?ans+' of '+tot+' answered. ':'')+(sh.txn.trim()?'':'No transaction #. ')+'Tap again to submit';if(!sh.txn.trim())$('f_txn').classList.add('need');setTimeout(function(){subArmed=false;b.textContent='Submit to store'},4000);return}
